@@ -1,0 +1,14 @@
+{
+  "hash": "d73d49bf01872e792990e5083a2911dc",
+  "result": {
+    "markdown": "---\ntitle: \"Week 1 Challenge Instructions\"\nauthor: \"Oriol Vallès Codina\"\ndescription: \"Loading Data and Creating a Network\"\ndate: \"02/13/2023\"\nformat:\n  html:\n    toc: true\n    code-fold: true\n    code-copy: true\n    code-tools: true\n# editor: visual\ncategories: \n  - challenge_1\n  - instruction\n  # - railroads\n  # - faostat\n  # - wildbirds\n---\n\n\n\n\n## Challenge Overview\n\nToday's challenge is to\n\n1) read in a dataset, and\n\n2) create a network object\n\n## Load the Data\n\nRead in one (or more) of the following data sets, using the correct R package and command.\n\n-   got_marriages.csv\n-   fish_encounters dataset (available in the `tidyr` package)\n-   got_like_dislike.csv\n\nFind the `_data` folder, located inside the `posts` folder. Then you can read in the data, using base `read.csv` or `read_csv` standard tidy read command to read Comma Separated Values files or, alternatively, read the data in directly from loading a package.\n\n\n::: {.cell}\n\n:::\n\n\nAdd any comments or documentation as needed. More challenging data sets may require additional code chunks and documentation.\n\n## Create a Network\n\nLoad the package `igraph` and create an `igraph` object (i.e. a graph or network) in the form of an edge list. The command may vary whether the data is given as a list of connections or an adjacency matrix. Is the network directed or undirected; weighted or unweighted; unimodal or bipartite? Can you plot it?\n\n\n::: {.cell}\n\n:::",
+    "supporting": [],
+    "filters": [
+      "rmarkdown/pagebreak.lua"
+    ],
+    "includes": {},
+    "engineDependencies": {},
+    "preserve": {},
+    "postProcess": true
+  }
+}
