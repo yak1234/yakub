@@ -1,0 +1,13 @@
+Region,Beyond Wall,Crownlands,Dorne,Essos,Iron Islands,North,Reach,Riverlands,Stormlands,Vale,Wall,Westerlands,Color
+Beyond Wall,NA,0,0,0,0,1,0,0,0,0,1,0,black
+Crownlands,0,NA,0,0,0,0,1,1,1,1,0,0,red
+Dorne,0,0,NA,0,0,0,1,0,1,0,0,0,orange
+Essos,0,0,0,NA,0,0,0,0,0,0,0,0,purple
+Iron Islands,0,0,0,0,NA,0,0,0,0,0,0,0,lightgrey
+North,1,0,0,0,0,NA,0,1,0,0,1,0,dimgrey
+Reach,0,1,1,0,0,0,NA,1,1,0,0,1,green
+Riverlands,0,1,0,0,0,1,,NA,0,1,0,1,blue
+Stormlands,0,1,1,0,0,0,1,0,NA,0,0,0,goldenrod1
+Vale,0,1,0,0,0,0,0,1,0,NA,0,0,cornflowerblue
+Wall,1,0,0,0,0,1,0,0,0,0,NA,0,black
+Westerlands,0,0,0,0,0,0,1,1,0,0,0,NA,darkred
