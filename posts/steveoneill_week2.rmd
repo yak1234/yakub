@@ -1,0 +1,125 @@
+---
+title: "Short Assignment 1: Reading Network Data"
+author: "Steve O'Neill"
+editor: visual
+tags: 
+  - shortassignment1
+---
+
+```{r setup, include=FALSE}
+library(igraph)
+library(statnet)
+library(tidyverse)
+```
+
+### Reading in data
+
+```{r}
+got_marriages <- read_csv("_data/got/got_marriages.csv", show_col_types = FALSE)
+```
+
+### IGraph from Edgelist
+
+This edgelist comes with edge attributes `Type`, `Notes` and `Generation`.
+
+```{r}
+#Directed = FALSE because marriages are intrinsically symmetric:
+got_marriages.net <- graph_from_data_frame(got_marriages,
+                                           directed = FALSE)
+got_marriages.net
+```
+
+These are the vertexes (e.g. nodes). They represent a blend of land areas, administrative zones, and family Houses:
+
+```{r}
+V(got_marriages.net)
+```
+
+And these are the types of edges we have:
+
+```{r}
+unique(E(got_marriages.net)$Type)
+```
+
+#### Plot
+
+Here is the most basic plot, before assigning `$Type` to `$weight`
+
+```{r}
+plot(got_marriages.net,
+            arrow.mode="-")
+```
+
+Here we add each marriage relationship, including affairs, to the `weight` value which has meaning to the `igraph` package
+
+```{r}
+E(got_marriages.net)$weight<-E(got_marriages.net)$Type
+```
+
+After `weight` has been added, the graph looks much different:
+
+```{r}
+plot(got_marriages.net,
+            arrow.mode="-")
+```
+
+I want to color the edges according to specific marriage types:
+
+```{r}
+#Define colors for each type of marriage
+colors <- c(Married = "red", 
+            Engaged = "green", 
+            Affair = "blue")
+
+#Match() matches "Married" with "red", and so on
+E(got_marriages.net)$color <- colors[match(E(got_marriages.net)$Type, names(colors))]
+
+plot(got_marriages.net,
+     arrow.mode="-",
+     edge.color=E(got_marriages.net)$color,
+     vertex.label.family="Helvetica",
+     main="Game of Thrones Marriage Network"
+    )
+
+legend("bottomleft", legend=c("Married", "Engaged", "Affair"), fill=colors, title="Type of marriage", cex=0.8)
+```
+
+Here is an alternative, circular layout that in my opinion is not as useful because it does not highlight the social isolation of `Beyond Wall`:
+
+```{r}
+layout1 <- layout_in_circle(got_marriages.net)
+
+plot(got_marriages.net,
+     arrow.mode="-",
+     vertex.label.family="Helvetica",
+     vertex.label.cex=.5,
+     edge.color=E(got_marriages.net)$color,
+     edge.width=1,
+     main="Game of Thrones Marriage Network",
+     layout = layout1
+     )
+legend("bottomleft", legend=c("Married", "Engaged", "Affair"), fill=colors, title="Type of marriage", cex=0.8)
+```
+
+## Statnet
+
+I am assuming "loops" are cases where Lannister -- Lannister, or similar. So I'll be setting that to TRUE. And multiple to TRUE as well.
+
+```{r}
+got_marriages.stat <- as.network(got_marriages, loops = TRUE, multiple = TRUE)
+print(got_marriages.stat)
+```
+
+This is a `network` object rather than a `igraph` object we were using before.
+
+```{r}
+class(got_marriages.stat)
+class(got_marriages.net)
+```
+
+Plotting is ugly, but functional:
+
+```{r}
+plot(got_marriages.stat,
+     displaylabels = T)
+```
