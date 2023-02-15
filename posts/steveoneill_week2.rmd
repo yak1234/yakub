@@ -12,8 +12,6 @@ library(statnet)
 library(tidyverse)
 ```
 
-## Short Assignment 1: Reading Network Data (GOT Marriage Dataset)
-
 ### Reading in data
 
 ```{r}
