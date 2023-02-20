@@ -1,5 +1,5 @@
 ---
-title: "Week 1 Challenge Instructions"
+title: "Week 1 Challenge"
 author: "Ben Ramsey"
 description: "Loading Data and Creating a Network"
 date: "02/13/2023"
