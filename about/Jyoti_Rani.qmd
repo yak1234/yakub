@@ -1,0 +1,31 @@
+---
+title: "Jyoti Rani"
+image: images/JyotiRani.jpg
+about:
+  template: solana
+  image-width: 15em
+  image-shape: round
+  image: images/JyotiRani.jpg
+  links:
+    - icon: github
+      text: Github
+      href: https://github.com/Jyoti-Rani28
+---
+
+## Education/Work Background
+•	Master in Computer Applications - Sikkim Manipal University 
+•	Bachelor of Science (Mathematics Honors) - Ranchi University 
+
+## R experience
+•	Advanced level
+
+
+## Research interests
+Financial Modelling, Trend analysis, Market analysis, Data Governance and Management
+
+## Hometown
+Jamshedpur, Jharkhand, India
+
+## Hobbies
+Gardening, Travelling, Baking
+
