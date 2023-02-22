@@ -1,0 +1,76 @@
+---
+title: "Challenge 1 Mekhala"
+author: "Mekhala Kumar"
+desription: "Used gotmarriages and fish_encounters datasets"
+date: "02/22/2023"
+format:
+  html:
+    toc: true
+    code-fold: true
+    code-copy: true
+    code-tools: true
+categories:
+  - challenge1
+  - Mekhala Kumar
+  - gotmarriages
+  - fish_encounters
+---
+
+
+```{r}
+#| label: setup
+#| include: false
+#| 
+
+library(tidyverse)
+library(googlesheets4)
+library(igraph)
+library(statnet)
+```
+
+## Reading in the data
+
+```{r}
+got_marriages<-read_csv("_data/got/got_marriages.csv")
+head(got_marriages)
+```
+## Creating the network
+```{r}
+got_marriages_net<-graph_from_data_frame(got_marriages,directed=FALSE)
+```
+
+## Features of the network
+The network has 20 vertices and 255 edges. It is a unimodal, undirected and unweighted network.
+```{r}
+vcount(got_marriages_net)
+ecount(got_marriages_net)
+is_bipartite(got_marriages_net)
+is_directed(got_marriages_net)
+is_weighted(got_marriages_net)
+
+vertex_attr_names(got_marriages_net)
+edge_attr_names(got_marriages_net)
+
+```
+
+## Plotting the network
+```{r}
+plot(got_marriages_net)
+```
+
+## Second dataset
+The network has 30 vertices and 114 edges. It is also a unimodal, undirected and unweighted network. I am not sure how to interpret the plot for the fish encounters data.
+```{r}
+fish<-fish_encounters
+head(fish)
+fish_n<-graph_from_data_frame(fish_encounters,directed=FALSE)
+vcount(fish_n)
+ecount(fish_n)
+is_bipartite(fish_n)
+is_directed(fish_n)
+is_weighted(fish_n)
+
+vertex_attr_names(fish_n)
+edge_attr_names(fish_n)
+plot(fish_n)
+```
