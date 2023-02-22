@@ -1,0 +1,95 @@
+---
+title: "Week 1 Challenge"
+author: "Claire Battaglia"
+desription: "Loading data & creating a network"
+date: "February 22, 2023"
+format:
+  html:
+    toc: true
+    code-fold: true
+    code-copy: true
+    code-tools: true
+categories:
+  - Claire Battaglia
+  - challenge1
+
+---
+
+```{r}
+#| label: setup
+#| warning: false
+
+library(tidyverse)
+library(igraph)
+
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Data
+
+This dataset represents the teams in Game of Thrones.
+
+```{r data got}
+# read in data
+teams <- read_csv("_data/got/got_teams.csv", show_col_types = FALSE)
+
+# specify from, to fields
+teams <- teams %>%
+  rename(from = team, to = joins) %>%
+  relocate(from, to, alliance, gh, .before = id)
+
+# preview
+head(teams, 25)
+```
+
+Now I'll create a network object.
+
+```{r network object got}
+# create network object
+teams.ig <- graph_from_data_frame(teams, directed = FALSE)
+
+# view
+teams.ig
+```
+
+This tells us a few things.
+
+1. The network is *undirected*.
+1. The network is *named*. I.e. the nodes have names.
+1. The edges are not weighted.
+1. It is not bipartite.
+1. There are 66 nodes/vertices.
+1. There are 33 edges/ties.
+
+We can explore the nodes and edges further.
+
+```{r nodes and edges got}
+# get nodes
+V(teams.ig)
+
+# get edges
+E(teams.ig)
+```
+
+Let's try to plot this.
+
+```{r plot got}
+# not sure what this does but I found it on the internet so why not :)
+teams.ig <- simplify(teams.ig, remove.multiple = F, remove.loops = T)
+
+# assign weight
+E(teams.ig)$weight <- E(teams.ig)$alliance
+
+# plot network
+plot(teams.ig,
+     vertex.size = 10,
+     vertex.color = "maroon",
+     vertex.label.cex = .5,
+     main = "Game of Thrones Teams")
+```
+
+That looks... sort of useless (but vaguely like a network!).
+
+
+
+
