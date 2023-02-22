@@ -1,0 +1,61 @@
+---
+title: "Week 1 Challenge"
+author: "Miranda Manka"
+desription: "Loading Data and Creating a Network"
+date: "02/22/2023"
+format:
+  html:
+    toc: true
+    code-fold: true
+    code-copy: true
+    code-tools: true
+categories:
+  - challenge1
+  - Miranda Manka
+---
+
+```{r}
+#| label: setup
+#| warning: false
+#| message: false
+
+library(tidyverse)
+library(igraph)
+
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Challenge Overview
+
+Today's challenge is to
+
+1) read in a dataset, and
+
+2) create a network object
+
+## Load the Data
+
+```{r}
+got_marriages = read_csv("_data/got/got_marriages.csv", show_col_types = FALSE)
+got_marriages
+```
+
+## Create a Network
+
+The network is undirected, unweighted, and unimodal. There are 20 vertices/nodes (families) and 255 edges/links (different connections/relationships).
+
+```{r}
+got_marriages.ig = graph_from_data_frame(got_marriages, directed = FALSE) #directed = false because with relationships, if a is married to b then b is also married to a
+got_marriages.ig
+
+vcount(got_marriages.ig)
+ecount(got_marriages.ig)
+
+is_bipartite(got_marriages.ig)
+is_directed(got_marriages.ig)
+is_weighted(got_marriages.ig)
+
+table(got_marriages$Type)
+
+plot(got_marriages.ig)
+```
