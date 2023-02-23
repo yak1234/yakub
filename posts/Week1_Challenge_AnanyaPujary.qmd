@@ -20,7 +20,7 @@ categories:
 ```{r}
 #| label: setup
 #| include: false
-library(tidyverse)
+library(tidyverse) 
 library(igraph)
 library(GGally)
 library(intergraph)
