@@ -58,7 +58,7 @@ edge_attr_names(got_marriages_net)
 plot(got_marriages_net)
 ```
 
-## Second dataset
+##Trying a Second dataset
 The fish encounters network has 30 vertices and 114 edges. It is also a unimodal, undirected and unweighted network. I am not sure how to interpret the plot for the fish encounters data.
 ```{r}
 fish<-fish_encounters
