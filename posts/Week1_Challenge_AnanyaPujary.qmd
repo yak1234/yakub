@@ -1,0 +1,77 @@
+---
+title: "Week 1 Challenge"
+author: "Ananya Pujary"
+description: "Loading Data and Creating a Network"
+date: "02/22/2023"
+format:
+  html:
+    toc: true
+    code-fold: true
+    code-copy: true
+    code-tools: true
+# editor: visual
+categories: 
+  - challenge_1
+  # - railroads
+  # - faostat
+  # - wildbirds
+---
+
+```{r}
+#| label: setup
+#| include: false
+library(tidyverse) 
+library(igraph)
+library(GGally)
+library(intergraph)
+library(dplyr)
+
+```
+
+## Challenge Overview
+
+Today's challenge is to
+
+1) read in a dataset, and
+
+2) create a network object
+
+## Load the Data
+
+Reading in the `got_marriages.csv` file:
+
+```{r}
+
+got_marriages<-read_csv("../posts/_data/got/got_marriages.csv")
+
+got_marriages
+
+```
+
+## Create a Network
+
+Creating an `igraph` object and finding out whether the network directed, weighted or bipartite.
+
+```{r}
+#| label: summary
+
+# not adjacency matrix, not n x n matrix => undirected
+got_marriages.ig <-graph_from_data_frame(got_marriages, directed = FALSE)
+
+head(got_marriages.ig)
+
+# describing the network
+is_directed(got_marriages.ig)
+is_bipartite(got_marriages.ig)
+is_weighted(got_marriages.ig)
+
+```
+Thus, this network is undirected, unimodal, and unweighted.
+
+Now, I'll plot the network:
+```{r}
+# plotting the network 
+plot(got_marriages.ig, edge.curved=.1, vertex.color = "orange")
+```
+
+
