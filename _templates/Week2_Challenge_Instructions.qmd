@@ -1,0 +1,72 @@
+---
+title: "Week 2 Challenge Instructions"
+author: "Oriol Vallès Codina"
+description: "Describing the Basic Structure of a Network"
+date: "02/22/2023"
+format:
+  html:
+    toc: true
+    code-fold: true
+    code-copy: true
+    code-tools: true
+# editor: visual
+categories: 
+  - challenge_2
+  - instructions
+  # - railroads
+  # - faostat
+  # - wildbirds
+---
+
+```{r}
+#| label: setup
+#| include: false
+#| 
+```
+
+## Challenge Overview
+
+Describe the basic structure of a network following the steps in tutorial of week 2, this time using a dataset of your choice: for instance, you could use Marriages in Game of Thrones or Like/Dislike from week 1. 
+
+Another more complex option is the newly added dataset of the US input-output table of direct requirements by industry, availabe in the Bureau of Economic Analysis. Input-output tables show the economic transactions between industries of an economy and thus can be understood as a directed adjacency matrix. Data is provided in the form of an `XLSX` file, so using `read_xlsx` from package `readxl` is recommended, including the `sheet` as an argument (`2012` for instance).
+
+Identify and describe content of nodes and links, and identify format of data set (i.e., matrix or edgelist, directed or not, weighted or not), and whether attribute data are present. Be sure to provide information about network size (e.g., information obtained from network description using week 1 network basic tutorial commands.)
+
+Explore the dataset using commands from week 2 tutorial. Comment on the highlighted aspects of network structure such as: 
+
+- Geodesic and Path Distances; Path Length
+- Dyads and Dyad Census
+- Triads and Triad Census
+- Network Transitivity and Clustering
+- Component Structure and Membership
+
+Be sure to both provide the relevant statistics calculated in `R`, as well as your own interpretation of these statistics.
+
+## Describe the Network Data
+
+1. *List and inspect* List the objects to make sure the datafiles are working properly.
+2. *Network Size* What is the size of the network? You may use `vcount` and `ecount`.
+3. *Network features* Are these networks weighted, directed, and bipartite?
+4. *Network Attributes* Now, using commands from either `statnet` or `igraph`, list the vertex and edge attributes.
+
+## Dyad and Triad Census
+
+Now try a full dyad census. This gives us the number of dyads where the relationship is:
+
+- Reciprocal (mutual), or `mut`
+- Asymmetric (non-mutual), or `asym`, and
+- Absent, or `null`
+
+Now use `triad.census` in order to do a triad census.
+
+## Global and Local Transitivity or Clustering
+
+Compute global transitivity using `transitivity` on `igraph` or `gtrans` on `statnet` and local transitivity of specific nodes of your choice, in addition to the average clustering coefficient. What is the distribution of node degree and how does it compare with the distribution of local transitivity?
+
+## Path Length and Component Structure 
+
+Can you compute the average path length and the _diameter_ of the network? Can you find the component structure of the network and identify the cluster membership of each node?
+
+```{r}
+
+```
