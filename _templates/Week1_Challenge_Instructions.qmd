@@ -1,8 +1,8 @@
 ---
 title: "Week 1 Challenge Instructions"
-author: "Oriol Vallès Codina"
+author: "Erika Nagai"
 description: "Loading Data and Creating a Network"
-date: "02/13/2023"
+date: "02/15/2023"
 format:
   html:
     toc: true
@@ -24,6 +24,17 @@ categories:
 #| 
 ```
 
+
+
+
+```{r}
+library(igraph)
+library(dplyr)
+library(tidyr)
+library(statnet)
+library(readr)
+```
+
 ## Challenge Overview
 
 Today's challenge is to
@@ -42,15 +53,108 @@ Read in one (or more) of the following data sets, using the correct R package an
 
 Find the `_data` folder, located inside the `posts` folder. Then you can read in the data, using base `read.csv` or `read_csv` standard tidy read command to read Comma Separated Values files or, alternatively, read the data in directly from loading a package.
 
-```{r}
-```
+# Game of Thrones Marriage data
 
-Add any comments or documentation as needed. More challenging data sets may require additional code chunks and documentation.
+`got_marriages` file looks like an edge list where each row represents an edge (from and to).
+
+```{r}
+
+got_marriage <- read_csv("../posts/_data/got/got_marriages.csv")
+head(got_marriage)
+
+```
+There are multiple edges between the same families for example there are four marriages between Arryn family and Vale family. The number of marriages (or other types of relationship) should be recorded as an weight of edges.
+
+```{r}
+got_marriage <- got_marriage %>%
+  group_by(From, To, Type) %>%
+  summarize(weight=n())
+```
 
 ## Create a Network
 
-Load the package `igraph` and create an `igraph` object (i.e. a graph or network) in the form of an edge list. The command may vary whether the data is given as a list of connections or an adjacency matrix. Is the network directed or undirected; weighted or unweighted; unimodal or bipartite? Can you plot it?
+Load the package `igraph` and create an `igraph` object (i.e. a graph or network) in the form of an edge list. 
+
 
 ```{r}
 #| label: summary
+
+library(igraph)
+
+got.marriage.net <- graph_from_data_frame(got_marriage, directed=FALSE) #marriage is a symmetrical relationship so it should be indirected
 ```
+
+This network is weighted and not directed.
+The edges of this network has two attributes, which are type (marriage/affair/engaged) and weight (the number of marriages/affairs/engagements).
+
+```{r}
+edge_attr_names(got.marriage.net)
+```
+
+## Plot a Network
+
+### The most simple network
+
+This is a simple plot of Game of Thrones marriage network.
+
+```{r}
+plot.igraph(got.marriage.net,
+            vertex.label.color = V(got.marriage.net)$type)
+
+# plot.igraph(got_distance.net, 
+#             label.cex = .2,
+#             vertex.size=0,
+#             arrow.mode = "-",
+#             vertex.label.color=V(got_distance.net)$color)
+```
+### Network with the relationship types and the weight of edges
+I visualized the type and the weight of the edges.
+
+Septa family and Beyond Wall family are isolated from other families and they connect with other family (Martell and North, respectively) with one affair relationship.
+Tragaryen, Tyrell, Vale, and North families have many marriages within the same families. 
+
+
+```{r}
+# Assign colors to the type
+
+colors <- c(Married = "darkcyan",
+            Engaged = "cyan",
+            Affair = "brown3")
+
+E(got.marriage.net)$color <- colors[match(E(got.marriage.net)$Type, names(colors))]
+
+# Plot
+plot(got.marriage.net,
+     vertex.color = "light grey",
+     edge.color=E(got.marriage.net)$color,
+     edge.width=E(got.marriage.net)$weight*0.4,
+     main = "Game of Thrones: Marriage Network")
+legend(x = "bottomleft",
+       legend = c("Married", "Engaged", "Affair"), fill=colors, title = "Type of relationship")
+```
+### Cleaned Network 
+
+There are marriages within the same families, for example there are several marriages within the family North. The edges within the same families makes the whole network visualization looks more complicated. So I removed the marriages with in the same families.
+
+This visualization shows that Tyrell & Reach families, Lannister & Waterlands, Frev & Vale familiesa are strongly connected with many marriages.
+
+```{r}
+got_marriage1 <- got_marriage %>% 
+  filter(From != To)
+
+got.marriage1.net <- graph_from_data_frame(got_marriage1, directed=FALSE)
+
+E(got.marriage1.net)$color <- colors[match(E(got.marriage1.net)$Type, names(colors))]
+
+# Plot
+plot(got.marriage1.net,
+     vertex.color = "light grey",
+     edge.color=E(got.marriage1.net)$color,
+     edge.width=E(got.marriage1.net)$weight*0.4,
+     main = "Game of Thrones: Marriage Network")
+legend(x = "bottomleft",
+       legend = c("Married", "Engaged", "Affair"), fill=colors, title = "Type of relationship")
+
+```
+
+
