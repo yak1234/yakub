@@ -15,10 +15,9 @@ categories:
   - instruction
   - Game of Thrones
   - Erika_Nagai
-  # - railroads
-  # - faostat
-  # - wildbirds
 ---
+
+
 
 ```{r}
 #| label: setup
@@ -47,13 +46,7 @@ Today's challenge is to
 
 ## Load the Data
 
-Read in one (or more) of the following data sets, using the correct R package and command.
-
--   got_marriages.csv
--   fish_encounters dataset (available in the `tidyr` package)
--   got_like_dislike.csv
-
-Find the `_data` folder, located inside the `posts` folder. Then you can read in the data, using base `read.csv` or `read_csv` standard tidy read command to read Comma Separated Values files or, alternatively, read the data in directly from loading a package.
+I read got_marriage.csv. This data shows the network of romantic relationship (marriage, engagement, affair) between families in the show "Game of Thrones".
 
 # Game of Thrones Marriage data
 
