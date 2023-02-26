@@ -1,5 +1,5 @@
 ---
-title: "Week 1 Challenge Instructions"
+title: "Week 1 Challenge"
 author: "Erika Nagai"
 description: "Loading Data and Creating a Network"
 date: "02/15/2023"
@@ -13,6 +13,8 @@ format:
 categories: 
   - challenge_1
   - instruction
+  - Game of Thrones
+  - Erika_Nagai
   # - railroads
   # - faostat
   # - wildbirds
