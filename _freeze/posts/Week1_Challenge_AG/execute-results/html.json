@@ -1,0 +1,16 @@
+{
+  "hash": "12483d1cf7a6695bdba50fb6a70a98ef",
+  "result": {
+    "markdown": "---\ntitle: \"Week 1 Challenge - AG\"\nauthor: \"Alex Genovese\"\ndescription: \"Loading Data and Creating a Network\"\ndate: \"02/13/2023\"\nformat:\n  html:\n    toc: true\n    code-fold: true\n    code-copy: true\n    code-tools: true\n# editor: visual\n---\n\n::: {.cell}\n\n```{.r .cell-code}\nlibrary(tidyverse)\n```\n\n::: {.cell-output .cell-output-stderr}\n```\n── Attaching packages ─────────────────────────────────────── tidyverse 1.3.2 ──\n✔ ggplot2 3.4.0     ✔ purrr   0.3.4\n✔ tibble  3.1.8     ✔ dplyr   1.0.9\n✔ tidyr   1.2.0     ✔ stringr 1.4.0\n✔ readr   2.1.2     ✔ forcats 0.5.1\n── Conflicts ────────────────────────────────────────── tidyverse_conflicts() ──\n✖ dplyr::filter() masks stats::filter()\n✖ dplyr::lag()    masks stats::lag()\n```\n:::\n\n```{.r .cell-code}\nfish_encounters <- fish_encounters\n\nlibrary(igraph)\n```\n\n::: {.cell-output .cell-output-stderr}\n```\n\nAttaching package: 'igraph'\n\nThe following objects are masked from 'package:dplyr':\n\n    as_data_frame, groups, union\n\nThe following objects are masked from 'package:purrr':\n\n    compose, simplify\n\nThe following object is masked from 'package:tidyr':\n\n    crossing\n\nThe following object is masked from 'package:tibble':\n\n    as_data_frame\n\nThe following objects are masked from 'package:stats':\n\n    decompose, spectrum\n\nThe following object is masked from 'package:base':\n\n    union\n```\n:::\n\n```{.r .cell-code}\nfish_encounters.net <-graph_from_data_frame(fish_encounters,\n                                      directed=FALSE)\nplot.igraph(fish_encounters.net,margin=0,arrow.mode=\"-\")\n```\n\n::: {.cell-output-display}\n![](Week1_Challenge_AG_files/figure-html/unnamed-chunk-1-1.png){width=672}\n:::\n\n```{.r .cell-code}\nis_directed(fish_encounters.net)\n```\n\n::: {.cell-output .cell-output-stdout}\n```\n[1] FALSE\n```\n:::\n\n```{.r .cell-code}\nis_weighted(fish_encounters.net)\n```\n\n::: {.cell-output .cell-output-stdout}\n```\n[1] FALSE\n```\n:::\n\n```{.r .cell-code}\nis_bipartite(fish_encounters.net)\n```\n\n::: {.cell-output .cell-output-stdout}\n```\n[1] FALSE\n```\n:::\n:::\n",
+    "supporting": [
+      "Week1_Challenge_AG_files"
+    ],
+    "filters": [
+      "rmarkdown/pagebreak.lua"
+    ],
+    "includes": {},
+    "engineDependencies": {},
+    "preserve": {},
+    "postProcess": true
+  }
+}
