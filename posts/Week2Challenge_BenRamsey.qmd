@@ -25,10 +25,6 @@ categories:
 library(tidyverse)
 library(statnet)
 library(igraph)
-
-got_marriages <- read_csv("_data/got/got_marriages.csv")
-got_marriages.net <- as.network(got_marriages, loops = TRUE, multiple = TRUE, directed = FALSE)
-got_marriages.ig <- graph_from_data_frame(got_marriages)
 ```
 
 ## Challenge Overview
@@ -54,6 +50,10 @@ Be sure to both provide the relevant statistics calculated in `R`, as well as yo
 1. *List and inspect* List the objects to make sure the datafiles are working properly.
 
 ```{r}
+got_marriages <- read_csv("_data/got/got_marriages.csv")
+got_marriages.net <- as.network(got_marriages, loops = TRUE, multiple = TRUE, directed = FALSE)
+got_marriages.ig <- graph_from_data_frame(got_marriages)
+
 ls()
 ```
 
