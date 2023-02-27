@@ -1,0 +1,90 @@
+---
+title: "Week 1 Challenge Submission"
+author: "Akhilesh Kumar"
+description: "Loading Data and Creating a Network"
+date: "02/27/2023"
+format:
+  html:
+    toc: true
+    code-fold: true
+    code-copy: true
+    code-tools: true
+categories: 
+  - challenge_1
+  - instruction
+
+---
+
+```{r}
+#| label: setup
+#| include: false
+
+# install.packages('igraph')
+library(igraph)
+library(tidyr)
+
+```
+
+## Challenge Overview
+
+Today's challenge is to
+
+1) read in a dataset, and
+
+2) create a network object
+
+## Load the Data
+
+- Use 'read.csv' to read got_like_dislike.csv' file 
+- Remove first columns to prepare Adjacency matrix
+- Convert Dataframe to matrix format
+
+```{r}
+data = read.csv('_data\\got\\got_like_dislike.csv', header=TRUE)
+data = data[,4:ncol(data)]
+# Convert the data frame to matrix
+adj_matrix <- as.matrix(data)
+```
+
+## Create a Network
+- Load the package `igraph` and create an `igraph` object,
+- The network seem 'undirected' and 'weighted'
+- Data is an adjacency matrix format.
+- 'simplify' is applied to remove multiple edges and combine their weights to represent the edges in a single line.
+- Nodes/ Vertexes have been color coded on the basis of total sum of likes and dislikes, where if:
+  - total sum of likes and dislikes >0, vertex color is green
+  - total sum of likes and dislikes <0, vertex color is red
+  - total sum of likes and dislikes =0, vertex color is yellow
+- Edges between nodes have been color coded on the basis of like/ dislike value, where for a:
+  - like, edge color is green
+  - dislike, vertex color is red
+  - Other, vertex color is yellow
+
+```{r}
+library(igraph)
+# create a graph object from the adjacency matrix
+graph.ig <- graph_from_adjacency_matrix(adj_matrix, mode = "undirected", diag = FALSE, weighted = TRUE)
+
+# simplify the graph to remove multiple edges and combine their weights
+graph.ig <- simplify(graph.ig, edge.attr.comb = "sum")
+
+# add a small positive value to all edge weights to avoid layout errors
+E(graph.ig)$weight <- E(graph.ig)$weight + 10
+
+# specify color vectors based on likes/dislikes column for vertices and edges
+color_vector <- ifelse(rowSums(adj_matrix, na.rm = TRUE) > 0, "green", ifelse(rowSums(adj_matrix, na.rm = TRUE) < 0, "red", "yellow"))
+edge_color_vector <- ifelse(adj_matrix > 0, "green", ifelse(adj_matrix < 0, "red", "yellow"))
+
+# plot the graph with adjusted parameters
+plot(graph.ig, 
+     layout=layout_with_fr(graph.ig, weights = E(graph.ig)$weight), 
+     vertex.size=10, 
+     vertex.label.cex=0.8, 
+     vertex.label.color= 'black',
+     vertex.frame.color = color_vector,
+     vertex.color = color_vector,
+     edge.arrow.size=0.5,
+     edge.width=E(graph.ig)$weight/10,
+     edge.color=edge_color_vector,
+     main="Game of Thrones Likes/Dislikes Graph")
+```
