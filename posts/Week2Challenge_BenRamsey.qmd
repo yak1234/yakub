@@ -92,6 +92,7 @@ Compute global transitivity using `transitivity` on `igraph` or `gtrans` on `sta
 ```{r}
 transitivity(got_marriages.ig, type = "global")
 transitivity(got_marriages.ig, type = "average")
+transitivity(got_marriages.ig, type = "local", vids = V(got_marriages.ig)[c("Targaryen", "Stark", "Martell")])
 ```
 The alters of the ego are slightly more connected. 
 
@@ -101,5 +102,9 @@ Can you compute the average path length and the _diameter_ of the network? Can y
 
 ```{r}
 average.path.length(got_marriages.ig)
-
+diameter(got_marriages.ig)
+components(got_marriages.ig)$no
+components(got_marriages.ig)$csize
 ```
+
+The average path length is 1.86875. The graph has one component, and the component is made up of twenty nodes.
