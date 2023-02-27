@@ -1,0 +1,26 @@
+---
+title: "Week 1 Challenge - AG"
+author: "Alex Genovese"
+description: "Loading Data and Creating a Network"
+date: "02/13/2023"
+format:
+  html:
+    toc: true
+    code-fold: true
+    code-copy: true
+    code-tools: true
+# editor: visual
+---
+
+```{r}
+library(tidyverse)
+fish_encounters <- fish_encounters
+
+library(igraph)
+fish_encounters.net <-graph_from_data_frame(fish_encounters,
+                                      directed=FALSE)
+plot.igraph(fish_encounters.net,margin=0,arrow.mode="-")
+is_directed(fish_encounters.net)
+is_weighted(fish_encounters.net)
+is_bipartite(fish_encounters.net)
+```
