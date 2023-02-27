@@ -1,0 +1,16 @@
+{
+  "hash": "810acd6fc1a03a3f3346c4910430d9d7",
+  "result": {
+    "markdown": "---\ntitle: \"Week 1 Challenge Submission\"\nauthor: \"Akhilesh Kumar\"\ndescription: \"Loading Data and Creating a Network\"\ndate: \"02/27/2023\"\nformat:\n  html:\n    toc: true\n    code-fold: true\n    code-copy: true\n    code-tools: true\ncategories: \n  - challenge_1\n  - instruction\n\n---\n\n\n\n\n## Challenge Overview\n\nToday's challenge is to\n\n1) read in a dataset, and\n\n2) create a network object\n\n## Load the Data\n\n- Use 'read.csv' to read got_like_dislike.csv' file \n- Remove first columns to prepare Adjacency matrix\n- Convert Dataframe to matrix format\n\n\n::: {.cell}\n\n```{.r .cell-code}\ndata = read.csv('_data\\\\got\\\\got_like_dislike.csv', header=TRUE)\ndata = data[,4:ncol(data)]\n# Convert the data frame to matrix\nadj_matrix <- as.matrix(data)\n```\n:::\n\n\n## Create a Network\n- Load the package `igraph` and create an `igraph` object,\n- The network seem 'undirected' and 'weighted'\n- Data is an adjacency matrix format.\n- 'simplify' is applied to remove multiple edges and combine their weights to represent the edges in a single line.\n- Nodes/ Vertexes have been color coded on the basis of total sum of likes and dislikes, where if:\n  - total sum of likes and dislikes >0, vertex color is green\n  - total sum of likes and dislikes <0, vertex color is red\n  - total sum of likes and dislikes =0, vertex color is yellow\n- Edges between nodes have been color coded on the basis of like/ dislike value, where for a:\n  - like, edge color is green\n  - dislike, vertex color is red\n  - Other, vertex color is yellow\n\n\n::: {.cell}\n\n```{.r .cell-code}\nlibrary(igraph)\n# create a graph object from the adjacency matrix\ngraph.ig <- graph_from_adjacency_matrix(adj_matrix, mode = \"undirected\", diag = FALSE, weighted = TRUE)\n\n# simplify the graph to remove multiple edges and combine their weights\ngraph.ig <- simplify(graph.ig, edge.attr.comb = \"sum\")\n\n# add a small positive value to all edge weights to avoid layout errors\nE(graph.ig)$weight <- E(graph.ig)$weight + 10\n\n# specify color vectors based on likes/dislikes column for vertices and edges\ncolor_vector <- ifelse(rowSums(adj_matrix, na.rm = TRUE) > 0, \"green\", ifelse(rowSums(adj_matrix, na.rm = TRUE) < 0, \"red\", \"yellow\"))\nedge_color_vector <- ifelse(adj_matrix > 0, \"green\", ifelse(adj_matrix < 0, \"red\", \"yellow\"))\n\n# plot the graph with adjusted parameters\nplot(graph.ig, \n     layout=layout_with_fr(graph.ig, weights = E(graph.ig)$weight), \n     vertex.size=10, \n     vertex.label.cex=0.8, \n     vertex.label.color= 'black',\n     vertex.frame.color = color_vector,\n     vertex.color = color_vector,\n     edge.arrow.size=0.5,\n     edge.width=E(graph.ig)$weight/10,\n     edge.color=edge_color_vector,\n     main=\"Game of Thrones Likes/Dislikes Graph\")\n```\n\n::: {.cell-output-display}\n![](akhilesh_challenge_1_files/figure-html/unnamed-chunk-3-1.png){width=672}\n:::\n:::",
+    "supporting": [
+      "akhilesh_challenge_1_files"
+    ],
+    "filters": [
+      "rmarkdown/pagebreak.lua"
+    ],
+    "includes": {},
+    "engineDependencies": {},
+    "preserve": {},
+    "postProcess": true
+  }
+}
