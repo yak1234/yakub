@@ -1,6 +1,6 @@
 ---
-title: "Week 2 Challenge Instructions"
-author: "Oriol Vallès Codina"
+title: "Week 2 Challenge"
+author: "Ben Ramsey"
 description: "Describing the Basic Structure of a Network"
 date: "02/22/2023"
 format:
@@ -21,7 +21,14 @@ categories:
 ```{r}
 #| label: setup
 #| include: false
-#| 
+
+library(tidyverse)
+library(statnet)
+library(igraph)
+
+got_marriages <- read_csv("_data/got/got_marriages.csv")
+got_marriages.net <- as.network(got_marriages, loops = TRUE, multiple = TRUE, directed = FALSE)
+got_marriages.ig <- graph_from_data_frame(got_marriages)
 ```
 
 ## Challenge Overview
@@ -45,9 +52,19 @@ Be sure to both provide the relevant statistics calculated in `R`, as well as yo
 ## Describe the Network Data
 
 1. *List and inspect* List the objects to make sure the datafiles are working properly.
+
+```{r}
+ls()
+```
+
+
 2. *Network Size* What is the size of the network? You may use `vcount` and `ecount`.
 3. *Network features* Are these networks weighted, directed, and bipartite?
 4. *Network Attributes* Now, using commands from either `statnet` or `igraph`, list the vertex and edge attributes.
+
+```{r}
+print(got_marriages.net)
+```
 
 ## Dyad and Triad Census
 
@@ -57,16 +74,32 @@ Now try a full dyad census. This gives us the number of dyads where the relation
 - Asymmetric (non-mutual), or `asym`, and
 - Absent, or `null`
 
+```{r}
+sna::dyad.census(got_marriages.net)
+```
+
 Now use `triad.census` in order to do a triad census.
+
+```{r}
+sna::triad.census(got_marriages.net, mode = "graph")
+```
+
 
 ## Global and Local Transitivity or Clustering
 
 Compute global transitivity using `transitivity` on `igraph` or `gtrans` on `statnet` and local transitivity of specific nodes of your choice, in addition to the average clustering coefficient. What is the distribution of node degree and how does it compare with the distribution of local transitivity?
+
+```{r}
+transitivity(got_marriages.ig, type = "global")
+transitivity(got_marriages.ig, type = "average")
+```
+The alters of the ego are slightly more connected. 
 
 ## Path Length and Component Structure 
 
 Can you compute the average path length and the _diameter_ of the network? Can you find the component structure of the network and identify the cluster membership of each node?
 
 ```{r}
+average.path.length(got_marriages.ig)
 
 ```
