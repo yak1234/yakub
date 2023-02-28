@@ -26,6 +26,7 @@ library(readr)
 library(ggplot2)
 library(igraph)
 library(statnet)
+library(giscus)
 ```
 
 ## Challenge Overview
@@ -86,7 +87,7 @@ head(Industry_2007)
 
 ```
 
-These datasets consist of 407 columns and 410 rows and they show the economic transatcion network within 405 different industry groups. The first two columns of this data are the industry code and the name of the corresponding industry. The 405 columns that follow indicate the economic transactions with the industry in the second column. The unit of the economica transactions is in %. The data is in an adjacency matrix format.
+These datasets consist of 407 columns and 410 rows and they show the economic transaction network within 405 different industry groups. The first two columns of this data are the industry code and the name of the corresponding industry. The 405 columns that follow indicate the economic transactions with the industry in the second column. The unit of the economic transactions is in %. The data is in an adjacency matrix format.
 
 ```{r}
 dim(Industry_2007)
@@ -194,10 +195,9 @@ Dyad census:
 Mutual dyads are few compared to null dyads.
 
 ```{r}
-print("2007")
+
 dyad_census(industry_2007.net)
 
-print("2012")
 dyad_census(industry_2012.net)
 ```
 
