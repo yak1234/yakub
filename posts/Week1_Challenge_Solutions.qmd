@@ -1,0 +1,120 @@
+---
+title: "Week 1 Challenge Solutions"
+author: "Oriol Vallès Codina"
+editor: visual
+format:
+  html:
+    df-print: paged
+    toc: true
+    code-fold: false
+    code-copy: true
+    code-tools: true
+    css: styles.css
+categories:
+  - challenge_1
+  - solution
+---
+
+Before starting, the necessary packages should be loaded:
+
+```{r}
+#| label: setup
+#| warning: false
+#| message: false
+
+library(tidyverse)
+library(igraph)
+
+knitr::opts_chunk$set(echo = TRUE, warning=FALSE,
+                      message=FALSE)
+```
+
+### Marriages in Game of Thrones
+
+```{r}
+got.marriages <- read_csv('_data/got/got_marriages.csv')
+
+head(got.marriages)
+```
+
+The first two columns indicate the list of edges in the network. The network is symmetric and unweighted, but with 3 types of links (married, engaged, or affair):
+
+```{r}
+table(got.marriages$Type)
+```
+
+Finally, a graph can be created using the `igraph` package
+
+```{r}
+g.got.marriages <- graph_from_data_frame(got.marriages)
+```
+
+and plotted:
+
+```{r}
+plot(g.got.marriages, edge.arrow.size = 0)
+```
+
+We could also color the edges depending on the type of link by creating another column as a factor and changing its levels to color names:
+
+```{r}
+got.marriages$Type.Color <- as.factor(got.marriages$Type)
+
+levels(got.marriages$Type.Color)
+
+levels(got.marriages$Type.Color) <- c('gray', 'blue', 'green')
+
+E(g.got.marriages)$color <- got.marriages$Type.Color
+
+plot(g.got.marriages, edge.arrow.size = 0)
+```
+
+### Fish Encounters
+
+`fish_encounters` dataset is directly loaded with `tidyverse` or `tidyr`:
+
+```{r}
+head(fish_encounters)
+```
+
+The graph can be created using:
+
+```{r}
+g.fish <- graph_from_data_frame(fish_encounters)
+
+V(g.fish)$name
+```
+
+We can color the stations by selecting the nodes with names that cannot be converted into numbers:
+
+```{r}
+V(g.fish)$color[is.na(as.numeric(V(g.fish)$name))] <- 'lightblue'
+
+plot(g.fish, edge.arrow.size = .5)
+```
+
+### Likes and Dislikes in Game of Thrones
+
+```{r}
+got.likes <- read.csv('_data/got/got_like_dislike.csv')
+
+head(got.likes)
+```
+
+Although the data is given in the form of an adjacency matrix, the object is a data frame that needs to be coerced into a matrix. The network is asymmetric and weighted, where negative weights indicate dislike.
+
+```{r}
+g.likes <- graph_from_adjacency_matrix(as.matrix(got.likes[ , - c(1 : 3)]), mode = 'directed', weighted = TRUE)
+
+kableExtra :: kable(as.matrix(got.likes[ , - c(1 : 3)]))
+```
+
+Characters in Game of Thrones seem to dislike each other much more than like each other...
+
+```{r}
+hist(E(g.likes)$weight)
+
+E(g.likes)$color <- colorRampPalette(c("yellow", "blue"))(11)[E(g.likes)$weight + 6]
+
+plot(g.likes, edge.arrow.size = 0.5)
+```
