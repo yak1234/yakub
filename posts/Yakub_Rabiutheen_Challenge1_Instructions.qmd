@@ -1,0 +1,89 @@
+---
+title: "Week 1 Challenge Instructions"
+author: "Yakub Rabiutheen"
+description: "Loading Data and Creating a Network"
+date: "02/27/2023"
+format:
+  html:
+    toc: true
+    code-fold: true
+    code-copy: true
+    code-tools: true
+# editor: visual
+categories: 
+  - challenge_1
+  - instructions
+  # - railroads
+  # - faostat
+  # - wildbirds
+---
+
+```{r}
+library(readr)
+```
+
+## Challenge Overview
+
+Today's challenge is to
+
+1) read in a dataset, and
+
+2) create a network object
+
+## Load the Data
+
+Read in one (or more) of the following data sets, using the correct R package and command.
+
+-   got_marriages.csv
+-   fish_encounters dataset (available in the `tidyr` package)
+-   got_like_dislike.csv
+
+Find the `_data` folder, located inside the `posts` folder. Then you can read in the data, using base `read.csv` or `read_csv` standard tidy read command to read Comma Separated Values files or, alternatively, read the data in directly from loading a package.
+
+```{r}
+library(readr)
+setwd("~/GitHub/Social_Networks_Spring_2023/posts/_data")
+got_marriages <- read_csv("got/got_marriages.csv")
+```
+
+Add any comments or documentation as needed. More challenging data sets may require additional code chunks and documentation.
+
+```{r}
+got_marriages
+```
+
+
+
+## Create a Network
+
+Load the package `igraph` and create an `igraph` object (i.e. a graph or network) in the form of an edge list. The command may vary whether the data is given as a list of connections or an adjacency matrix. Is the network directed or undirected; weighted or unweighted; unimodal or bipartite? Can you plot it?
+
+```{r}
+library(igraph)
+got_marriages.ig = graph_from_data_frame(got_marriages, directed = FALSE) 
+got_marriages.ig
+```
+
+##Node and Edge Exploration
+```{r}
+##Nodes
+V(got_marriages.ig)
+```
+```{r}
+E(got_marriages.ig)
+```
+
+##Directed,Bipariate,Weighted Test
+
+```{r}
+is_bipartite(got_marriages.ig)
+is_directed(got_marriages.ig)
+is_weighted(got_marriages.ig)
+```
+This network is not directed, it's unweighted and unimodal.
+
+##Plot The Network
+```{r}
+plot(got_marriages.ig)
+```
+
