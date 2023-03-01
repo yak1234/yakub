@@ -1,0 +1,65 @@
+---
+title: "Week 1 Challenge"
+author: "Mani Kanta Gogula"
+description: "Loading Data and Creating a Network"
+date: "02/13/2023"
+format:
+  html:
+    toc: true
+    code-fold: true
+    code-copy: true
+    code-tools: true
+# editor: visual
+categories: 
+  - challenge_1
+  - instructions
+
+---
+
+```{r}
+#| label: setup
+#| include: false
+```
+
+
+
+## Challenge Overview
+
+Today's challenge is to
+
+1) read in a dataset, and
+
+2) create a network object
+
+## Load the Data
+
+Read in one (or more) of the following data sets, using the correct R package and command.
+
+-   got_marriages.csv
+-   fish_encounters dataset (available in the `tidyr` package)
+-   got_like_dislike.csv
+
+Find the `_data` folder, located inside the `posts` folder. Then you can read in the data, using base `read.csv` or `read_csv` standard tidy read command to read Comma Separated Values files or, alternatively, read the data in directly from loading a package.
+
+```{r}
+library(readr)
+got_marriages <- read_csv("_data/got/got_marriages.csv")
+head(got_marriages)
+```
+
+
+
+## Create a Network
+
+Load the package `igraph` and create an `igraph` object (i.e. a graph or network) in the form of an edge list. The command may vary whether the data is given as a list of connections or an adjacency matrix. Is the network directed or undirected; weighted or unweighted; unimodal or bipartite? Can you plot it?
+
+```{r}
+library(igraph)
+network.ig <- graph_from_data_frame(got_marriages, directed = TRUE)
+
+# Check if the network is directed or undirected, weighted or unweighted, unimodal or bipartite
+is_bipartite(network.ig)
+is_weighted(network.ig) 
+is_directed(network.ig) 
+plot(network.ig)
+```
