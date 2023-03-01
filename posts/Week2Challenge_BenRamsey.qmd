@@ -65,6 +65,7 @@ ls()
 ```{r}
 print(got_marriages.net)
 ```
+The network has twenty vertices and 255 edges and is not directed, not bipartite and not weighted. 
 
 ## Dyad and Triad Census
 
@@ -94,7 +95,7 @@ transitivity(got_marriages.ig, type = "global")
 transitivity(got_marriages.ig, type = "average")
 transitivity(got_marriages.ig, type = "local", vids = V(got_marriages.ig)[c("Targaryen", "Stark", "Martell")])
 ```
-The alters of the ego are slightly more connected. 
+The alters of the ego could be more connected, although I don't have the information to make that determination.   
 
 ## Path Length and Component Structure 
 
@@ -107,4 +108,4 @@ components(got_marriages.ig)$no
 components(got_marriages.ig)$csize
 ```
 
-The average path length is 1.86875. The graph has one component, and the component is made up of twenty nodes.
+The average path length is 1.86875. The graph has one component, and the component is made up of twenty nodes. The diameter is four. 
