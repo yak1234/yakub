@@ -1,0 +1,112 @@
+---
+title: "Kruzlic Week 2 Challenge"
+author: "Bryn Kruzlic"
+description: "Basics of a Network: Dyads and Triads"
+date: "03/06/2023"
+format:
+  html:
+    toc: true
+    code-fold: true
+    code-copy: true
+    code-tools: true
+# editor: visual
+categories: 
+  - challenge_2
+  - instructions
+  # - railroads
+  # - faostat
+  # - wildbirds
+---
+
+```{r}
+#| label: setup
+#| include: false
+#| 
+```
+## Describe the Network Data
+
+
+```{r}
+library(tidyverse)
+library(readr)
+library(igraph)
+
+got_like_dislike <- read_csv("_data/got/got_like_dislike.csv")
+View(got_like_dislike)
+```
+
+1. *List and inspect* List the objects to make sure the datafiles are working properly.
+2. *Network Size* What is the size of the network? You may use `vcount` and `ecount`.
+3. *Network features* Are these networks weighted, directed, and bipartite?
+4. *Network Attributes* Now, using commands from either `statnet` or `igraph`, list the vertex and edge attributes.
+
+#### First, we can list the object by using the command 'ls' to make suret the proper data is coming through. 
+```{r}
+ls(got_like_dislike)
+
+```
+#### Network size can be determined with the following:
+
+```{r}
+got_like_dislike.ig <- graph_from_data_frame(got_like_dislike)
+vcount(got_like_dislike.ig)
+ecount(got_like_dislike.ig)
+```
+#### Currently, we can see there are 11 vertices with 46 edges. 
+
+#### We can determine the network features, discussed in Challenge 1, with the following:
+
+```{r}
+is.bipartite(got_like_dislike.ig)
+is.directed(got_like_dislike.ig)
+is.weighted(got_like_dislike.ig)
+```
+#### While the network is not bipartite or weighted, it is directed. Since we know that we will be discussing triads later on, it is important to determine and make sure that our network is directed. Undirected graphs will have no asymmetric edges. 
+
+### The network attributes can be found here:
+
+```{r}
+igraph::vertex_attr_names(got_like_dislike.ig)
+igraph::edge_attr_names(got_like_dislike.ig)
+```
+
+## Dyad and Triad Census
+
+### *Dyad Census:*
+
+#### Three key components of a dyad census involve determining the relationships. In this case, we can observe the relationships by using the functions- reciprocal or 'mut', asymmetric or 'asym' and finally, absent or 'null'. We can determine the answers by the following: 
+
+```{r}
+igraph::dyad.census(got_like_dislike.ig)
+```
+#### Since this is a directed graph, we can see the listings of reciprocal dyads (being 1), asymmetric dyads (being 12) and absent dyads (being 42). 
+
+### *Triad Census:*
+
+```{r}
+igraph::triad.census(got_like_dislike.ig)
+```
+
+## Global and Local Transitivity Clustering
+
+#### Transitivity here refers to the probability that the vertices will be connected in a given network. In this case, we can determine the local transitivity and global transitivity with the following:
+
+```{r} 
+transitivity(got_like_dislike.ig)
+transitivity(got_like_dislike.ig, type = 'global')
+transitivity(got_like_dislike.ig, type = 'average') 
+```
+*I have realized in my efforts that the standard transitivity() command automatically defaults to global.* 
+
+#### We can round this up to 0.24, representing that almost 25% of the global triads are transitive, while 59% of the local triads are transitive. This local transivity can be called the average clustering coefficient, focusing on the low degree nodes of the network. 
+
+## Path Length and Component Structure
+
+#### One can determine the path length and diameter by the following
+
+```{r}
+average.path.length(got_like_dislike.ig,directed = T)
+igraph::components(got_like_dislike.ig)$no
+igraph::components(got_like_dislike.ig)$csize
+```
+#### As shown above, the average path length appears to be 1.3 with 1 component at a size of 11.  

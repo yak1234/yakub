@@ -1,0 +1,81 @@
+---
+title: "Challenge 1 Kruzlic"
+author: "Bryn Kruzlic"
+description: "Loading Game of Thrones marriages and Creating a Network"
+date: "02/28/2023"
+format:
+  html:
+    toc: true
+    code-fold: true
+    code-copy: true
+    code-tools: true
+# editor: visual
+categories: 
+  - challenge_1
+  - instructions
+  # - railroads
+  # - faostat
+  # - wildbirds
+---
+
+```{r}
+#| label: setup
+#| include: false
+#| 
+```
+
+
+### Load in libraries
+
+```{r}
+# load in libraries
+knitr::opts_chunk$set(echo = TRUE)
+library(igraph)
+```
+### Load in data set. This is the Game of Thrones marriages dataset
+
+```{r} 
+# read in data set
+
+library(readr)
+got_marriages <- read_csv("_data/got/got_marriages.csv")
+View(got_marriages)
+```
+
+### Create a Network
+
+```{r} 
+# plot the marriages using igraph
+
+#| label: summary
+marriages.ig <- graph_from_data_frame(got_marriages, directed = FALSE)
+plot.igraph(marriages.ig, vertex.size=13)
+```
+
+#### Is the network directed or undirected? The answer is false. 
+#### Is the network weighted or unweighted? The answer is false. 
+#### Is the network unimodal or bipartite?  The answer is false. 
+
+```{r}
+is.bipartite(marriages.ig)
+is.directed(marriages.ig)
+is.weighted(marriages.ig)
+```
+The network is not directed, weighted, or bipartite. 
+
+
+### Now, let's take a look at the vertices and edges of the network.
+
+```{r}
+vcount(marriages.ig)
+ecount(marriages.ig)
+```
+According to the above code, there is a total of 20 vertices and 255 edges. 
+
+### Other important factors to consider
+```{r}
+table(got_marriages$Type)
+table(got_marriages$Generation)
+table(got_marriages$From)
+```
+
