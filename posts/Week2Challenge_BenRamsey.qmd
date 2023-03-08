@@ -63,7 +63,7 @@ ls()
 4. *Network Attributes* Now, using commands from either `statnet` or `igraph`, list the vertex and edge attributes.
 
 ```{r}
-print(got_marriages.net)
+print(got_marriages.net) 
 ```
 The network has twenty vertices and 255 edges and is not directed, not bipartite and not weighted. 
 
