@@ -25,6 +25,7 @@ categories:
 library(tidyverse)
 library(igraph)
 library(statnet)
+library(GGally)
 ```
 
 ## Challenge Overview
@@ -37,7 +38,7 @@ Describe the many measures of degree, as well as density, of a network and compa
 climate <- read.csv("_data/climate0205-allop.csv", sep =  ";") %>% subset(select = -c(X))
 climate.ig <- graph_from_adjacency_matrix(as.matrix(climate), weighted = TRUE, mode = "directed", add.rownames = TRUE)
 climate.net <- as.network(as.matrix(climate), directed = TRUE, weighted = TRUE)
-plot.igraph(climate.ig)
+ggnet2(climate.net, label = colnames(climate))
 ```
 
 If you have not done it before, evaluate the structure of the network (number of edges and vertices, dyad and triad census, etc.).
