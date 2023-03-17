@@ -12,7 +12,6 @@ format:
 # editor: visual
 categories: 
   - challenge_3
-  - instructions
   # - railroads
   # - faostat
   # - wildbirds
