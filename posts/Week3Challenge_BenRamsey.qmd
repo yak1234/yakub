@@ -94,4 +94,4 @@ edge_density(random.ig)
 random.nodes <- data.frame(degree = igraph::degree(random.ig))
 hist(random.nodes$degree)
 ```
-The Swiss climate policy network has a long right tail when it comes to total degree and it is less dense compared to the randomly generated graph.  
+The Swiss climate policy network has a long right tail when it comes to total degree and it is less dense and there are more complete triads compared to the randomly generated graph.  
