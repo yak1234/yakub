@@ -79,7 +79,8 @@ Can you compute the average path length and the _diameter_ of the network? Can y
 #Loading dataset
 
 ```{r}
-got_marriages <- read_csv("posts/_data/got/got_marriages.csv")
+library(readr)
+got_marriages <- read_csv("_data/got/got_marriages.csv")
 head(got_marriages)
 ```
 
