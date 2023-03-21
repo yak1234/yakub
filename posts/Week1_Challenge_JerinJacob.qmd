@@ -1,0 +1,140 @@
+---
+title: "Week 1 Challenge"
+author: "Jerin Jacob"
+description: "Loading Data and Creating a Network"
+date: "02/15/2023"
+format:
+  html:
+    toc: true
+    code-fold: true
+    code-copy: true
+    code-tools: true
+# editor: visual
+categories: 
+  - challenge_1
+
+---
+
+```{r}
+#| label: setup
+#| include: false
+
+library(tidyverse)
+library(googlesheets4)
+library(igraph)
+library(statnet)
+
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Reading in the Data
+GOT Marriage data is read in.
+
+
+```{r}
+got_marriage <- read_csv("_data/got/got_marriages.csv", show_col_types = FALSE) 
+got_marriage
+```
+The data is about the marriages happened between families in GOT. There are 5 variables and 255 case. First 2 variables are 'From' and 'To' which are the most important part of a 'Network Analysis' data. We also have the 'Type' of relationship and 'Generation' which classify the case as 'Past' or 'Current'. 
+
+## Creating igraph from dataframe
+
+We are cretaing an igraph from the GOT marriage dataframe so that we can do the network analysis.
+```{r}
+got_marriage.net<-graph_from_data_frame(got_marriage,
+                                      directed=FALSE)
+#deg <- degree(got_marriage.net, mode="all")
+  
+
+got_marriage.net
+
+```
+
+```{r}
+ # got_marriage.net %>%
+ #  group_by(From, To, Type) %>%
+ #  summarise(total_count = n())
+
+```
+
+An igraph is created for the data that is groouped by 'From', 'To', and 'Type'
+```{r}
+got_marriage_group <- got_marriage %>%
+  group_by(From, To, Type) %>%
+  summarise(total_count = n())
+
+got_marriage_group.net<-graph_from_data_frame(got_marriage_group,
+                                      directed=FALSE)
+  
+
+got_marriage_group.net
+```
+
+
+
+
+GOT marriage network has 20 vertices as listed below. It has 255 edges but the number of unique type relationship is 3; 'Married', 'Engagedf', 'Affair'. Unique classification of 'generation' attribute are 'Current' and 'Past'.
+```{r}
+#table(got_marriage$Type)
+
+V(got_marriage.net)
+unique(E(got_marriage.net)$Type)
+unique(E(got_marriage.net)$Generation)
+
+
+```
+
+Again, checking the vertex count and edge count of the network. 
+The vertex count for grouped network data and the original network data are same as 20. But edge count differs. For original network data, there are 255 edges but for grouped data, edges are 88. This is because, in the grouped network, each edge is a type of relationship from a family to another family. In the original data, each edge represent a unique relationship between families and therefore it is 255. 
+```{r}
+vcount(got_marriage.net)
+ecount(got_marriage.net)
+vcount(got_marriage_group.net)
+ecount(got_marriage_group.net)
+
+```
+The network is not bipartite which means it is a single mode network. It is un directed or other words symmetrical. It is also not weighted.
+```{r}
+is_bipartite(got_marriage.net)
+is_directed(got_marriage.net)
+is_weighted(got_marriage.net)
+
+```
+The vertex attributes and edge attributes are listed. Vertices has only one attribute named 'name'. and edges have 3 attributes; 'Type', 'Notes', 'Generation'.
+```{r}
+vertex_attr_names(got_marriage.net)
+edge_attr_names(got_marriage.net)
+
+```
+The vertex attribute name is accessed.
+```{r}
+V(got_marriage.net)$name
+
+```
+
+```{r}
+E(got_marriage.net)$Generation
+
+```
+
+Plotting the GOT marriage network
+```{r}
+
+plot(got_marriage.net, 
+            arrow.mode="-")
+```
+Plotting the grouped GOT marriage network
+```{r}
+plot(got_marriage_group.net, arrow_mode = "-")
+
+```
+
+
+
+
+
+
+
+
+
+
