@@ -1,0 +1,329 @@
+---
+title: "Week 2/3/4 Challenge Solutions"
+author: "Oriol Vallès Codina"
+description: "Analyzing the Complex Structure of the Economic Input-Output Network of the US, 2012"
+editor: visual
+format:
+  html:
+    df-print: paged
+    toc: true
+    code-fold: false
+    code-copy: true
+    code-tools: true
+    css: styles.css
+categories:
+  - challenge_2
+  - challenge_3
+  - challenge_4
+  - solution
+---
+
+# US Bureau of Economic Analysis - Input-Output Network
+
+![IO NETWORK OF MEXICO](_data/ntrwk_mex_total.png "Network")
+
+## Package Load
+
+Before starting, the necessary packages should be loaded. For this analysis, we are going to use `igraph`, but [other options](https://kateto.net/network-visualization) can be contemplated depending on your needs.
+
+```{r}
+#| label: setup
+#| warning: false
+#| message: false
+
+library(readxl)
+library(tidyverse)
+library(igraph)
+library(reshape2)
+
+knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message=FALSE)
+```
+
+## Data Preparation
+
+Motivated by the recent shocks on global supply chains, we are interested in analyzing and visualizing the complex structure of the inter-industry economic transactions of the United States. In economic analysis, this information is contained in the so-called *input-output table*, which many national and international databases document at different levels of industry aggregation (26, 50, 405, 800+...). From a network perspective, an input-output table is an asymmetric, weighted adjacency matrix where the weights correspond to the *input value* required to produce a unit of output, that is, its direct requirements.
+
+Data is directly loaded reading a `xlsx` file using the `readxl` package. Note that the file features two years, 2007 and 2012.
+
+```{r}
+filename <- '../posts/_data/US_input_output_table_2007_and_2012.xlsx' # while on console
+filename <- '_data/US_input_output_table_2007_and_2012.xlsx' # while rendering
+data <- read_xlsx(filename, sheet = "2012")
+```
+
+First of all, we explore the data: its dimensions and the values at its corners so we can extract the adjacency matrix.
+
+```{r}
+dim(data)
+
+data[1 : 10, 1 : 10]
+
+commodities <- unlist(data[5 : 409, 2])
+industries <- unlist(data[3, 3 : 407])
+```
+
+In this particular case, each *column* of the table displays the values of 405 *commodities* required by a specific *industry*. The input-output table is commodity-by-industry with commodities in the rows and industries in the columns, in a way that the list of commodities and industries do not necessarily match so we need to harmonize them to construct the adjacency matrix.
+
+```{r}
+table(commodities %in% industries)
+table(industries %in% commodities)
+
+io.table <- data[5 : 409, 3 : 407] %>% as.matrix
+io.table <- apply(io.table, 1, as.numeric) %>% t
+
+colnames(io.table) <- industries
+rownames(io.table) <- commodities
+
+sectors <- industries[industries %in% commodities]
+io.table <- io.table[sectors, sectors]
+
+go <- rowSums(io.table)
+```
+
+## Graph Analysis
+
+Once the adjacency matrix is constructed, we can now analyze and visualize the graph:
+
+```{r}
+g <- graph_from_adjacency_matrix(io.table, mode = 'directed', weighted = TRUE, add.rownames = TRUE)
+```
+
+### Size
+
+The network has the same amount of vertices than the number of rows and columns of the adjacency matrix:
+
+```{r}
+vcount(g)
+```
+
+and the following number of edges,
+
+```{r}
+ecount(g)
+```
+
+The network is relatively sparse:
+
+```{r}
+table(io.table > 0) / length(sectors) ^ 2
+
+io.table[io.table < 0] <- 0
+
+prob <- (table(io.table > 0) / length(sectors) ^ 2)['TRUE'] 
+```
+
+### Degree
+
+It is useful to compute the different degree concepts of the network and observe its distributions:
+
+```{r}
+nodes <- data.frame(name = V(g)$name,
+                    output = rowSums(io.table),
+                    all.degree = degree(g, mode = 'all'), 
+                    out.degree = degree(g, mode = 'out'),
+                    in.degree = degree(g, mode = 'in'), 
+                    total.degree = degree(g, mode = 'total'),
+                    eigen.centrality = evcent(g)$vector)
+
+head(nodes)
+
+nodes %>% melt %>% filter(variable != 'output' & variable != 'eigen.centrality') %>% 
+  ggplot(aes(x = value, fill = variable, color = variable)) + geom_density(alpha = .2, bw = 5) +
+  ggtitle('Degree Distribution')
+
+
+corrplot :: corrplot(cor(nodes[ , -1]), title = 'Correlation Plot')
+
+
+kableExtra :: kable(apply(nodes[ , -1], 2, function (x) nodes$name[order(x, decreasing = TRUE)][1 : 10]))
+
+# top.nodes <- nodes[order(nodes$degree, decreasing = T), ]
+# top.nodes[1 : 10, ] %>% ggplot(aes(x = out.degree, y = reorder(name, degree))) + geom_bar(stat = 'identity')
+
+plot(nodes$output, nodes$eigen.centrality)
+```
+
+### Dyad Census
+
+A dyad census confirms the input-output network is quite sparse. We could compare this dyad census with the null version of a random network with a similar number of edges:
+
+```{r}
+dyad.census(g)
+
+g.random <- erdos.renyi.game(length(sectors), prob, directed = TRUE)
+
+ecount(g.random)
+
+rbind(IO = dyad.census(g), random = dyad.census(g.random))
+```
+
+Mutual and null dyads are higher for the IO network, while asymmetric dyads are more common for the random network. How do we interpret these results?
+
+### Triad Census
+
+```{r}
+triad.labels <- c("A,B,C, the empty graph.",
+                  "A->B, C, the graph with a single directed edge.",
+                  "A<->B, C, the graph with a mutual connection between two vertices.",
+                  "A<-B->C, the out-star.",
+                  "A->B<-C, the in-star.",
+                  "A->B->C, directed line.","A<->B<-C.",
+                  "A<->B->C.",
+                  "A->B<-C, A->C.",
+                  "A<-B<-C, A->C.",
+                  "A<->B<->C.",
+                  "A<-B->C, A<->C.",
+                  "A->B<-C, A<->C.",
+                  "A->B->C, A<->C.",
+                  "A->B<->C, A<->C.",
+                  "A<->B<->C, A<->C, the complete graph.")
+
+triad.census.data <- data.frame(label = triad.labels, IO = triad.census(g), random = triad.census(g.random)) %>% melt
+colnames(triad.census.data) <- c('triad', 'network', 'value')
+triad.census.data %>% ggplot(aes(x = value, y = triad, fill = network)) + geom_bar(stat = 'identity', position = 'dodge')
+```
+
+Striking features of the above plot is the over-representation of out-stars, complete, and empty graphs in the input-output case relative to the random graph, while there is an under-representation of graphs with single directed edges and directed lines.
+
+## Transitivity
+
+```{r}
+transitivity(g, type = 'global')
+transitivity(g.random, type = 'global')
+
+nodes$transitivity <- transitivity(g, type = 'local')
+nodes$weighted.transitivity <-  transitivity(g, type = 'weighted')
+
+melt(nodes) %>% filter(variable == 'transitivity' | variable == 'weighted.transitivity') %>% 
+  ggplot(aes(x = value, fill = variable, color = variable)) + geom_density(alpha = 0.2) +
+  ggtitle('Transitivity Distribution, Local and Weighted')
+
+rbind(data.frame(network = 'IO', value = transitivity(g, type = 'local')),
+      data.frame(network = 'random', value = transitivity(g.random, type = 'local'))) %>% 
+  ggplot(aes(x = value, fill = network, color = network)) + geom_density(alpha = 0.2) +
+  ggtitle('Transitivity Distribution by Network')
+```
+
+## Component Structure
+
+```{r}
+E(g)$weight[E(g)$weight < 0] <- 0
+
+diameter(g)
+diameter(g.random)
+
+farthest_vertices(g)
+
+wc.g <- cluster_walktrap(g)
+member <- membership(wc.g)
+
+nodes$member <- member
+table(member)
+
+table(member) %>% melt %>% ggplot + geom_bar(aes(x = reorder(member, - value), y = value, fill = factor(member)), stat = 'identity')
+
+
+# Percentages of Output of each Component
+go.wc.percent <- 100 * sapply(names(table(member)), function(x) sum(go[member==x]))/sum(go)
+
+
+x <- 4
+ord.x <- order(go[member == x], decreasing = T)[1:15]
+V(g)$name[member == x][ord.x]
+
+```
+
+```{r}
+largest <- lapply(1:3,
+       function(y) 
+        {
+         x <- c(3,4,6)[y]
+         ord.x <- order(go[member == x], decreasing = T)[1:5]
+         data.frame(sector = V(g)$name[member == x][ord.x],
+                    output = go[member == x][ord.x],
+                    prcnt = round(100 * go[member == x][ord.x]/sum(go),2),
+                    component = as.factor(x),
+                    row.names = NULL)
+       })
+
+bind_rows(largest) %>% ggplot(aes(y=reorder(sector, prcnt), x=prcnt, fill=component, label=round(prcnt,2))) +
+  geom_bar(stat="identity") + ylab('') + xlab('% of Output')
+
+# + scale_fill_manual("component", values = rainbow_hcl(8, end = 290)[c(1,2,6,8)])
+```
+
+```{r}
+library(colorspace)
+library(qgraph)
+
+io.table.1 <- io.table
+diag(io.table.1) <- 0
+g <- graph_from_adjacency_matrix(io.table.1, mode = 'directed', weighted = TRUE, add.rownames = TRUE)
+
+e <- get.edgelist(g, names = FALSE)
+l <- qgraph.layout.fruchtermanreingold(e, vcount = vcount(g))
+V(g)$size <- 5 * go ^ 0.25
+V(g)$frame.color <- NA
+
+V.cols <- member
+V(g)$color <- alpha(rainbow_hcl(8, end = 290)[V.cols],0.8)
+E(g)$color <- alpha('black', E(g)$weight / max(E(g)$weight))
+V(g)$label <- NA
+
+
+par(mar = c(0,0,0,0))
+
+l <- qgraph.layout.fruchtermanreingold(e, vcount = vcount(g),
+                                       area = 100 * (vcount(g) ^ 2), repulse.rad = (vcount(g) ^ 3))
+# pdf('test.pdf') # uncomment to generate a pdf file with the plot
+plot(g,layout = l, edge.arrow.size = 0)
+
+# dev.off() # uncomment to generate a pdf file
+
+```
+
+<!-- # Other Visualization Packages -->
+
+<!-- ```{r 3js} -->
+
+<!-- library(threejs) -->
+
+<!-- library(htmlwidgets) -->
+
+<!-- # graphjs(largest_df_unique.igraph) -->
+
+<!-- # edges <- edges[!edges$from %in% 1 : 5 | !edges$to %in% 1 : 5] -->
+
+<!-- net.js <- graphjs(largest_df_unique.igraph, main="UNSC Members", bg = "gray10", showLabels=T, stroke=F,  -->
+
+<!--                   curvature = 0.1, attraction = 0.9, repulsion = 0.8, opacity = 0.9, edge.alpha = .25, -->
+
+<!--                   vertex.size = as.vector(table(largest_df_unique$`1`)[V(largest_df_unique.igraph)$name] / 137))  -->
+
+<!-- points3d(net.js, vertices(net.js), color="red", pch = V(largest_df_unique.igraph)$name,  -->
+
+<!--          size = 0.2) -->
+
+<!-- ``` -->
+
+<!-- ```{r visnetwork} -->
+
+<!-- library(visNetwork) -->
+
+<!-- node.names <- unique(largest_df_unique[,1]) %>% unlist -->
+
+<!-- node.aux <- 1 : 137 -->
+
+<!-- names(node.aux) <- node.names -->
+
+<!-- nodes <- data.frame(id = 1 : length(node.names), name = node.names) -->
+
+<!-- edges <- data.frame(from = node.aux[unlist(largest_df_unique[ , 1])],  -->
+
+<!--                     to = node.aux[unlist(largest_df_unique[ , 2])]) -->
+
+<!-- visNetwork(nodes, edges) -->
+
+<!-- plot(largest_df_unique.igraph, layout = layout_in_circle(largest_df_unique.igraph)) -->
+
+<!-- ``` -->
