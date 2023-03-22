@@ -1,0 +1,41 @@
+---
+title: "Week 4 Challenge Instructions"
+author: "Oriol Vallès Codina"
+description: "Centrality of a Network"
+date: "03/06/2023"
+format:
+  html:
+    toc: true
+    code-fold: true
+    code-copy: true
+    code-tools: true
+# editor: visual
+categories: 
+  - challenge_4
+  - instructions
+  # - railroads
+  # - faostat
+  # - wildbirds
+---
+
+```{r}
+#| label: setup
+#| include: false
+#| 
+```
+
+## Challenge Overview
+
+Describe the many measures of centrality of at least one network of your choice.
+
+## Describe the Network Data
+
+If you have not done it before, always start by evaluating the basic structure of the network (number of edges and vertices, dyad and triad census, etc.). Create a data frame `nodes` with the corresponding local attributes such as degree or local transitivity.
+
+## Centrality
+
+Compute at least one measure of centrality for each node, adding them as attributes to `nodes` in the form of extra columns: eigencentrality, betweenness, closeness, etc. Compute the distribution of at least one of those measures. What do we learn from comparing these measures of centrality with an equivalent random network (i.e. with the same number of edges and vertices)?
+
+```{r}
+
+```
