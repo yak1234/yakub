@@ -1,0 +1,299 @@
+---
+title: "Week 2 Challenge"
+author: "Steve O'Neill"
+description: "Describing the Basic Structure of a Network"
+date: "02/22/2023"
+format:
+  html:
+    toc: true
+    code-fold: false
+    code-copy: true
+    code-tools: true
+# editor: visual
+df-paged: true
+categories: 
+  - challenge_2
+  - instructions
+  # - railroads
+  # - faostat
+  # - wildbirds
+---
+
+```{r}
+#| label: setup
+#| include: false
+
+library(tidyverse)
+library(readxl)
+library(igraph)
+```
+
+## Challenge Overview
+
+*Describe the basic structure of a network following the steps in tutorial of week 2, this time using a dataset of your choice: for instance, you could use Marriages in Game of Thrones or Like/Dislike from week 1.*
+
+*Another more complex option is the newly added dataset of the US input-output table of direct requirements by industry, availabe in the Bureau of Economic Analysis. Input-output tables show the economic transactions between industries of an economy and thus can be understood as a directed adjacency matrix. Data is provided in the form of an `XLSX` file, so using `read_xlsx` from package `readxl` is recommended, including the `sheet` as an argument (`2012` for instance).*
+
+```{r}
+requirements_2007 <- read_xlsx("_data/got/US_input_output_table_2007_and_2012.xlsx", sheet = 4, skip = 4)
+requirements_2012 <- read_xlsx("_data/got/US_input_output_table_2007_and_2012.xlsx", sheet = 3, skip = 4)
+```
+
+*Identify and describe content of nodes and links, and identify format of data set (i.e., matrix or edgelist, directed or not, weighted or not), and whether attribute data are present. Be sure to provide information about network size (e.g., information obtained from network description using week 1 network basic tutorial commands.)*
+
+First, a look at the data:
+
+```{r}
+head(requirements_2007)
+```
+
+The dataset is not exactly ready for import. There are mismatching columns and 'codes'.
+
+```{r}
+dim(requirements_2007)
+```
+
+This code attempts to resolve that using the `intersect()` between the values.
+
+```{r}
+# Get the column names and values in the "Code" column
+cols <- colnames(requirements_2007)
+code <- requirements_2007$Code
+
+codes_intersect <- intersect(cols, code)
+
+requirements_adjacency_full <- requirements_2007 %>% filter(Code %in% codes_intersect) %>% select('Code', 'Commodity Description', all_of(codes_intersect)) 
+
+requirements_adjacency_matrix <- as.matrix(requirements_2007 %>% filter(Code %in% codes_intersect) %>% select(all_of(codes_intersect)))
+
+#Get dimensions of matrix - is it 'square'?
+dim(requirements_adjacency_matrix)
+```
+
+The resulting data is 'square' and only includes codes found in both the 'Code' column and column names. Now that it is in matrix format using `as.matrix`, I can give it to igraph:
+
+```{r}
+requirements_2007_matrix.ig <- graph_from_adjacency_matrix(requirements_adjacency_matrix, weighted = TRUE,
+                                 mode = "directed")
+vcount(requirements_2007_matrix.ig)
+ecount(requirements_2007_matrix.ig)
+```
+
+The igraph object has 401 vertices and 51860 edges.
+
+```{r}
+is_bipartite(requirements_2007_matrix.ig)
+is_directed(requirements_2007_matrix.ig)
+is_weighted(requirements_2007_matrix.ig)
+```
+
+It's not bipartite, yet it is directed (like I specified) and weighted (like I specified). The directions are the flow of commodities from industry to industry, and the weights are dollar amounts in millions USD.
+
+Because it's from a numeric matrix, just `name` and `weight` are included.
+
+```{r}
+#Just names and weight
+vertex_attr_names(requirements_2007_matrix.ig)
+edge_attr_names(requirements_2007_matrix.ig)
+```
+
+Hang on. There are some negative edges?
+
+```{r}
+#Wait. Some negative values?
+summary(E(requirements_2007_matrix.ig)$weight)
+```
+
+```{r}
+# identify edges with negative weights
+negative_edges <- which(E(requirements_2007_matrix.ig)$weight < 0)
+
+# print the edges with negative weights
+E(requirements_2007_matrix.ig)[negative_edges]
+```
+
+Only 8 negative edges. I want to remove them since they make finding distances impossible later. At just 8 edges of a low magnitude, I am not sure if they will make a difference either way.
+
+```{r}
+requirements_2007_matrix.ig <- delete_edges(requirements_2007_matrix.ig, negative_edges)
+```
+
+As expected, 8 less than before.
+
+```{r}
+ecount(requirements_2007_matrix.ig)
+```
+
+I want to bring in the descriptions in next:
+
+```{r}
+commodity_names <- setNames(requirements_adjacency_full$`Commodity Description`, requirements_adjacency_full$Code)
+
+# Set the vertex attribute with the industry names
+V(requirements_2007_matrix.ig)$commodity_name <- commodity_names[as.character(V(requirements_2007_matrix.ig)$name)]
+```
+
+Now they are in the igprah object:
+
+```{r}
+head(V(requirements_2007_matrix.ig)$commodity_name)
+```
+
+Really, though, I want the vertexes to be named with those descriptions:
+
+```{r}
+V(requirements_2007_matrix.ig)$name <- V(requirements_2007_matrix.ig)$commodity_name
+```
+
+Plotting for the first time:
+
+```{r}
+plot(requirements_2007_matrix.ig)
+```
+
+A zoomed in version is better:
+
+```{r}
+set.seed(1)
+
+# Set x and y axis limits
+
+xlim <- c(-1, 0)
+ylim <- c(-1, 0)
+
+# Plot the graph with arrows and node labels
+plot(requirements_2007_matrix.ig, xlim=xlim, ylim=ylim)
+```
+
+### Dyad Census
+
+20039 mutual, 31426 asymmetric, and 38735 empty dyads:
+
+```{r}
+igraph::dyad.census(requirements_2007_matrix.ig)
+```
+
+### Triad Census
+
+The output of this function is not readily interpretable:
+
+```{r}
+triad_2007 <- igraph::triad_census(requirements_2007_matrix.ig)
+triad_2007
+```
+
+To help with that, I found a table describing the types of triad connections. The source from this table is [here](http://www.analytictech.com/ucinet/help/hs4335.htm):
+
+```{r}
+triad_types <- c(
+'003' = 'A,B,C, empty triad.',
+'012' = 'A->B, C, triad with a single directed edge.',
+'102' = 'A<->B, C, triad with a reciprocated connection between two vertices.',
+'021D' = 'A<-B->C, triadic out-star.',
+'021U' = 'A->B<-C triadic in-star.',
+'021C' = 'A->B->C, directed line.',
+'111D' = 'A<->B<-C.',
+'111U' = 'A<->B->C.',
+'030T' = 'A->B<-C, A->C.',
+'030C' = 'A<-B<-C, A->C.',
+'201' = 'A<->B<->C.',
+'120D' = 'A<-B->C, A<->C.',
+'120U' = 'A->B<-C, A<->C.',
+'120C' = 'A->B->C, A<->C.',
+'210' = 'A->B<->C, A<->C.',
+'300' = 'A<->B<->C, A<->C,  complete triad.'
+)
+```
+
+Now to combine those with the data,
+
+```{r}
+names(triad_2007) <- triad_types
+triad_2007 <- data.frame(triad_2007)
+triad_2007$triad_type <- row.names(triad_2007)
+```
+
+Then to plot:
+
+```{r}
+ggplot(triad_2007, aes(x = triad_type, y = triad_2007)) +
+  geom_bar(stat = "identity", fill = "steelblue") +
+  coord_flip() +
+  labs(x = "Triad Types", y = "Frequency", 
+       title = "Frequency of Triad Types in Triad_2007 Data Frame")
+```
+
+## Global and Local Transitivity or Clustering
+
+First, the transitivity overall:
+
+```{r}
+transitivity(requirements_2007_matrix.ig)
+```
+
+And now, the comparison between the global and local clustering coefficients, respectively:
+
+```{r}
+#get global clustering coefficient: igraph
+transitivity(requirements_2007_matrix.ig, type="global")
+#get average local clustering coefficient: igraph
+transitivity(requirements_2007_matrix.ig, type="average")
+```
+
+## Path Length and Component Structure
+
+Here is the distance between "Automobile manufacturing" and "Truck trailer manufacturing"
+
+```{r}
+distances(requirements_2007_matrix.ig,"Automobile manufacturing", "Truck trailer manufacturing")
+```
+
+And the overall average path length:
+
+```{r}
+average.path.length(requirements_2007_matrix.ig,directed=T)
+```
+
+This shows we have an unconnected graph with two isolates and, technically, 3 components (one of them being giant)
+
+```{r}
+names(igraph::components(requirements_2007_matrix.ig))
+igraph::components(requirements_2007_matrix.ig)$no #Number of components
+igraph::components(requirements_2007_matrix.ig)$csize #Size of each component
+```
+
+### Postscript: NAICS Codes
+
+Just including this here because I want to use it in a later assignment.
+
+The second sheet includes a look-up table of NAICS codes. Unfortunately, the 'child' NAICS codes do not always begin with the same numbers as the 'parent' category NAICS codes. For example, **Durable Goods 33DG** contains NAICS code 3211 (Sawmills and wood preservation).
+
+I want to use the parent NAICS codes to make a legible graph with a reasonable number of nodes.
+
+```{r}
+#Get NAICS codes
+naics <- read_xlsx("_data/got/US_input_output_table_2007_and_2012.xlsx", sheet = 2, skip = 4)
+```
+
+In other words, I just want these sectors:
+
+```{r}
+naics %>% 
+  filter(!str_detect(Summary, "\\d"))
+```
+
+To get there, I'll use fill(). After this, every value in `Related 2012 NAICS Codes` will have one of the \~30 NAICS sectors accompanying it.
+
+```{r}
+#Remove any value in `Summary` if it has even one number
+naics <- naics %>% mutate(Summary = case_when(
+  (str_detect(Summary, "\\d")) ~ NA,
+  TRUE ~ Summary))
+
+naics <- naics %>% fill(Sector, Summary)
+
+naics
+
+```
+
+More to come on this next assignment.
