@@ -1,0 +1,104 @@
+---
+title: "Week 2 Challenge - GOT Marriages - Census, Transitivity, etc"
+author: "Miranda Manka"
+description: "Describing the Basic Structure of a Network"
+date: "03/22/2023"
+format:
+  html:
+    toc: true
+    code-fold: true
+    code-copy: true
+    code-tools: true
+categories: 
+  - challenge_2
+  - Miranda Manka
+---
+
+```{r}
+#| label: setup
+#| include: false
+#| message: false
+
+library(tidyverse)
+library(igraph)
+
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Challenge Overview
+
+```{r}
+got_marriages = read_csv("_data/got/got_marriages.csv", show_col_types = FALSE)
+got_marriages
+```
+
+## Describe the Network Data
+
+```{r}
+got_marriages.ig = graph_from_data_frame(got_marriages, directed = FALSE) #directed = false because with relationships, if a is married to b then b is also married to a
+got_marriages.ig
+
+vcount(got_marriages.ig)
+ecount(got_marriages.ig)
+
+is_bipartite(got_marriages.ig)
+is_directed(got_marriages.ig)
+is_weighted(got_marriages.ig)
+
+vertex_attr_names(got_marriages.ig)
+edge_attr_names(got_marriages.ig)
+
+table(got_marriages$Type)
+
+plot(got_marriages.ig)
+```
+
+## Dyad and Triad Census
+
+Now try a full dyad census. This gives us the number of dyads where the relationship is:
+
+- Reciprocal (mutual), or `mut`
+- Asymmetric (non-mutual), or `asym`, and
+- Absent, or `null`
+
+Now use `triad.census` in order to do a triad census.
+
+```{r}
+dyad_got = dyad.census(got_marriages.ig)
+dyad_got
+triad_got = triad.census(got_marriages.ig)
+triad_got
+```
+
+## Global and Local Transitivity or Clustering
+
+Compute global transitivity using `transitivity` on `igraph` or `gtrans` on `statnet` and local transitivity of specific nodes of your choice, in addition to the average clustering coefficient. What is the distribution of node degree and how does it compare with the distribution of local transitivity?
+
+```{r}
+global_transitivity = transitivity(got_marriages.ig, type = 'global')
+global_transitivity
+
+V(got_marriages.ig)$name
+V(got_marriages.ig)[c("Targaryen", "Baratheon", "Martell")]
+
+local_transitivity = transitivity(got_marriages.ig, type="local", vids=V(got_marriages.ig)[c("Targaryen", "Baratheon", "Martell")]) 
+local_transitivity
+
+avg_cluster_coef = transitivity(got_marriages.ig, type = 'average')
+avg_cluster_coef
+```
+
+## Path Length and Component Structure 
+
+Can you compute the average path length and the _diameter_ of the network? Can you find the component structure of the network and identify the cluster membership of each node?
+
+```{r}
+avg_path_length = average.path.length(got_marriages.ig, directed=F)
+avg_path_length
+
+names(igraph::components(got_marriages.ig))
+no_compon = igraph::components(got_marriages.ig)$no
+no_compon
+size_compon = igraph::components(got_marriages.ig)$csize
+size_compon
+```
