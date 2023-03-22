@@ -1,0 +1,155 @@
+---
+title: "Week 3 Challenge"
+author: "Claire Battaglia"
+description: "Degree and density of a network"
+date: "March 22, 2023"
+format:
+  html:
+    toc: true
+    code-fold: true
+    code-copy: true
+    code-tools: true
+# editor: visual
+categories: 
+  - Claire Battaglia
+  - challenge3
+  - degree
+  - density
+---
+
+```{r}
+#| label: setup
+#| include: false
+
+pacman::p_load(ggplot2,
+               tidyverse,
+               tidygraph,
+               ggraph,
+               igraph)
+
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Describe the network data
+
+This week I'll be creating a network of murders in the movie the Godfather.
+
+```{r data}
+# read in data
+murders <- read_csv("Godfather_murders.csv", show_col_types = FALSE)
+
+# create to, from objects
+from <- murders[, 1]
+to <- murders[, 2]
+
+# create network object - igraph
+murders.ig <- graph_from_data_frame(murders, directed = TRUE)
+
+print(murders.ig)
+
+# create network object - tidygraph
+murders_tidy <- as_tbl_graph(murders.ig)
+
+print(murders_tidy)
+```
+
+I've created a network object with both `igraph` and `tidygraph`, just to compare the two.
+
+The network is:
+
+* directed (one person commits the murder, the other is murdered)
+* named
+* unweighted
+* not bipartite
+
+It has 30 nodes and 21 edges. The network is not connected.
+
+```{r}
+# get number of components
+igraph::components(murders.ig)$no
+# get size of each component
+igraph::components(murders.ig)$csize
+```
+
+```{r plot network}
+# create plot
+ggraph(murders_tidy, layout = "auto") + 
+  geom_node_point() +
+  geom_edge_diagonal() + 
+  labs(title = "Murders in the Godfather, Part 1") +
+  theme_graph(foreground = "#c6a25a")
+```
+
+## Exploring degree
+
+```{r degree}
+# create df of degrees
+murders_nodes <- data.frame(name = V(murders.ig)$name, degree = igraph::degree(murders.ig)) %>%
+  mutate(indegree = igraph::degree(murders.ig, mode = "in", loops = FALSE),
+         outdegree = igraph::degree(murders.ig, mode = "out", loops = FALSE))
+
+murders_nodes
+```
+
+For this network, any node with an out-degree of anything other than zero has *committed* a murder while any node with an in-degree of anything other than zero was ultimately murdered. Logically we know that no node should have an in-degree of greater than zero, as one can only be murdered once.
+
+```{r}
+# get summary
+summary(murders_nodes)
+```
+Given the logical constraints of this network, there isn't much to revealed by the summary statistics. In the out-degree column we can see:
+
+* The maximum number of murders committed by any one person is 4.
+* The mean number of murders committed by all nodes is .7. This is the mean of *all* nodes, however, not the mean of the nodes who actually murdered someone. If we look at the out-degree distribution below, we can see that most nodes did not murder anyone and are therefore dragging the mean number of murders down significantly.
+
+```{r plot distribution}
+# create plot
+ggplot(murders_nodes, aes(x = outdegree)) +
+  geom_histogram(binwidth = 1, fill = "#c6a25a") +
+  labs(title = "Distribution of Murders in the Godfather, Part 1", x = NULL) +
+  theme_minimal()
+```
+
+## Density
+
+Network density is the proportion of ties present in a network of all possible ties. A complete network has a network density of "1." [I THINK]  that in this particular network a density of "1" would mean that every node both murdered someone and was ultimately murdered.
+
+_Possible ties = n(n-1)_
+
+_Actual ties = (2 * # of mutual ties) + # of asymmetric ties_
+
+There are 870 possible ties and 21 actual ties.
+
+```{r density}
+# calc density manually - FOR PRACTICE
+n <- 30
+p_ties <- n * (n-1)
+p_ties
+mut <- dyad.census(murders.ig)$mut
+asym <- dyad.census(murders.ig)$asym
+a_ties <- (2 * mut) + asym
+a_ties
+
+a_ties/p_ties
+
+# get density
+graph.density(murders.ig)
+```
+## Random network
+
+```{r random network}
+# create random network
+random <- erdos.renyi.game(30, 21, type = "gnm", directed = TRUE)
+
+# plot random network
+ggraph(random, layout = "auto") +
+  geom_node_point() +
+  geom_edge_diagonal() +
+  labs(title = "Plot of Random Network") +
+  theme_graph(foreground = "#c6a25a")
+```
+
+The random network is very different from the actual network.
+
+
+
