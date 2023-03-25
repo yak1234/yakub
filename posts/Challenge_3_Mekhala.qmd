@@ -1,0 +1,155 @@
+---
+title: "Challenge 3 Mekhala"
+author: "Mekhala Kumar"
+description: "Degree and Density of a Network"
+date: "03/25/2023"
+format:
+  html:
+    toc: true
+    code-fold: true
+    code-copy: true
+    code-tools: true
+# editor: visual
+categories: 
+  - challenge_3
+  - Mekhala Kumar
+  - input output data
+---
+
+```{r}
+#| label: setup
+#| include: false
+
+library(tidyverse)
+library(googlesheets4)
+library(igraph)
+library(statnet)
+library(readxl)
+```
+
+
+
+## Reading in data
+```{r}
+data<-read_xlsx("_data/got/US_input_output_table_2007_and_2012.xlsx",sheet="2012",skip=3)
+data<-data%>%
+      rename(Code=`Commodity / Industry`,`Commodity Description` =`...2`)
+data<-data %>%
+  filter(!row_number() %in% c(1))
+head(data)
+
+```
+## Converting into Network data format
+I noticed that some of the columns did not match the observations under the Commodity Description column. I looked for the differences manually but was wondering if there is a method in R that can be used to do the same. 
+
+```{r}
+adj<-data %>%
+  filter(!row_number() %in% c(402:409))
+adj<-adj%>%
+  select(!(`State and local government electric utilities`))%>%
+  select(!(`State and local government passenger transit`))%>%
+  select(!(`Federal electric utilities`))%>%
+  select(!(`Secondary smelting and alloying of aluminum`))
+#state and govt electric utilities, state and local govt passenger transit, federal electric utilities, Secondary smelting and alloying of aluminum
+adj<-subset(adj[3:403])
+adj_mat <- data.matrix(adj)
+table(adj_mat != 0)
+
+io_ig<-graph_from_adjacency_matrix(adj_mat, mode = "directed", weighted = TRUE, diag = FALSE)
+io_stat<- network(adj_mat,matrix.type="adjacency", directed=TRUE,loops=FALSE)
+```
+
+## Evaluation of the structure of the network
+In this challenge, I have ignored the trade occuring within an industry (that is, the loops).
+```{r}
+vcount(io_ig)
+ecount(io_ig)
+is_bipartite(io_ig)
+is_directed(io_ig)
+is_weighted(io_ig)
+
+print(io_stat)
+
+
+igraph::dyad.census(io_ig)
+sna::dyad.census(io_stat)
+
+igraph::triad.census(io_ig)
+sna::triad.census(io_stat)
+```
+
+```{r}
+#Global
+transitivity(io_ig, type="global")
+##Average local clustering coefficient
+transitivity(io_ig, type="average")
+
+gtrans(io_stat)
+
+```
+
+```{r}
+names(igraph::components(io_ig))
+igraph::components(io_ig)$no 
+igraph::components(io_ig)$csize
+isolates(io_stat)
+
+```
+
+## Degree 
+The average degree of the network is 344.9. The mean for both the indegree and outdegree are the same but the median is slightly lower for the outdegree than for the indegree. This means the nodes receive more links than send links. However, since the difference in the medians for the indegree and outdegree is only 15, it shows more of a mutual connection between the industries rather than a particular industry dominating. 
+```{r}
+#igraph::degree(io_ig)
+#sna::degree(io_stat)
+
+nodes_ig<-data.frame(name=V(io_ig)$name, degree=igraph::degree(io_ig,loops=FALSE))
+nodes_ig<-nodes_ig %>%
+    mutate(indegree=igraph::degree(io_ig, mode="in", loops=FALSE),
+           outdegree=igraph::degree(io_ig, mode="out", loops=FALSE))
+head(nodes_ig)
+
+nodes_stat<-data.frame(name=io_stat%v%"vertex.names", degree=sna::degree(io_stat))
+nodes_stat<-nodes_stat %>%
+    mutate(indegree=sna::degree(io_stat, cmode="indegree"),
+          outdegree=sna::degree(io_stat, cmode="outdegree"))
+
+head(nodes_stat)
+
+summary(nodes_ig)
+summary(nodes_stat)
+```
+## Density
+The density of the network is a global measure. 
+```{r}
+graph.density(io_ig)
+network.density(io_stat)
+
+```
+## Random Network
+The dyad and triad census as well as the distributions differ from the input output network. However, the density of the network is the same.
+
+```{r}
+erdos_renyi_net <- erdos.renyi.game(401, 69148, type = "gnm", directed = TRUE)
+
+```
+
+## Density of random network
+```{r}
+graph.density(erdos_renyi_net)
+
+```
+
+## Dyad and Triad Census of Random network
+```{r}
+igraph::dyad.census(erdos_renyi_net)
+igraph::triad.census(erdos_renyi_net)
+```
+## Degree distributions of Random network
+```{r}
+nodes_ern<-data.frame(degree=igraph::degree(erdos_renyi_net))
+nodes_ern<-nodes_ern %>%
+    mutate(indegree=igraph::degree(erdos_renyi_net, mode="in", loops=FALSE),
+           outdegree=igraph::degree(erdos_renyi_net, mode="out", loops=FALSE))
+head(nodes_ern)
+summary(nodes_ern)
+```
