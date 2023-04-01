@@ -64,7 +64,7 @@ Be sure to both provide the relevant statistics calculated in `R`, as well as yo
 ```{r}
 ls(got.net)
 
-ls(got.ig)#Ill revisit that later. This is indicating that the data files are not working properly, but I can run the code
+#ls(got.ig)#Ill revisit that later. This is indicating that the data files are not working properly, but I can run the code
 #just fine down below. 
 ```
 
