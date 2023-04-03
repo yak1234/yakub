@@ -1,0 +1,131 @@
+---
+title: "Week 1 Challenge Instructions"
+author: Amer Abuhasan 
+description: "Loading Data and Creating a Network"
+date: "02/13/2023"
+format:
+  html:
+    toc: true
+    code-fold: true
+    code-copy: true
+    code-tools: true
+# editor: visual
+categories: 
+  - challenge_1
+  - instructions
+  # - railroads
+  # - faostat
+  # - wildbirds
+---
+
+```{r}
+#| label: setup
+#| include: false
+
+library(tidyverse)
+library(igraph)
+library(kableExtra)
+
+knitr::opts_chunk$set(echo = TRUE, warning=FALSE,
+                      message=FALSE)
+```
+
+## Challenge Overview
+
+Today's challenge is to
+
+1) read in a dataset, and
+
+2) create a network object
+
+## Load the Data
+
+Read in one (or more) of the following data sets, using the correct R package and command.
+
+-   got_marriages.csv
+-   fish_encounters dataset (available in the `tidyr` package)
+-   got_like_dislike.csv
+
+Find the `_data` folder, located inside the `posts` folder. Then you can read in the data, using base `read.csv` or `read_csv` standard tidy read command to read Comma Separated Values files or, alternatively, read the data in directly from loading a package.
+
+```{r}
+#load in DF
+got.marriages <- read_csv('_data/got/got_marriages.csv')
+
+head(got.marriages)
+
+```
+
+
+
+```{r}
+table(got.marriages$Type)
+
+g.got.marriages <- graph_from_data_frame(got.marriages)
+
+table(got.marriages$Type)
+
+plot(g.got.marriages,edge.arrow.size=0)
+
+
+#color edges based on link 
+
+
+got.marriages$Type.Color <- as.factor(got.marriages$Type)
+
+levels(got.marriages$Type.Color)
+
+
+#coloring 
+
+levels(got.marriages$Type.Color) <- c('gray', 'blue', 'green')
+
+E(g.got.marriages)$color <- got.marriages$Type.Color
+
+plot(g.got.marriages, edge.arrow.size = 0)
+```
+
+
+
+
+```{r}
+head(fish_encounters)
+
+g.fish <- graph_from_data_frame(fish_encounters)
+
+V(g.fish)$name
+
+
+V(g.fish)$color[is.na(as.numeric(V(g.fish)$name))] <- 'lightblue'
+
+plot(g.fish, edge.arrow.size = .5)
+```
+```{r}
+got.likes <- read.csv('_data/got/got_like_dislike.csv')
+
+head(got.likes)
+
+
+g.likes <- graph_from_adjacency_matrix(as.matrix(got.likes[ , - c(1 : 3)]), mode = 'directed', weighted = TRUE)
+
+kableExtra :: kable(as.matrix(got.likes[ , - c(1 : 3)]))
+
+hist(E(g.likes)$weight)
+
+
+E(g.likes)$color <- colorRampPalette(c("yellow", "blue"))(11)[E(g.likes)$weight + 6]
+
+plot(g.likes, edge.arrow.size = 0.5) 
+```
+
+
+
+Add any comments or documentation as needed. More challenging data sets may require additional code chunks and documentation.
+
+## Create a Network
+
+Load the package `igraph` and create an `igraph` object (i.e. a graph or network) in the form of an edge list. The command may vary whether the data is given as a list of connections or an adjacency matrix. Is the network directed or undirected; weighted or unweighted; unimodal or bipartite? Can you plot it?
+
+```{r}
+#| label: summary
+```
