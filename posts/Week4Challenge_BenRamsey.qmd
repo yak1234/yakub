@@ -1,0 +1,63 @@
+---
+title: "Week 4 Challenge"
+author: "Ben Ramsey"
+description: "Centrality of a Network"
+date: "03/06/2023"
+format:
+  html:
+    toc: true
+    code-fold: true
+    code-copy: true
+    code-tools: true
+# editor: visual
+categories: 
+  - challenge_4
+  # - railroads
+  # - faostat
+  # - wildbirds
+---
+
+```{r}
+#| label: setup
+#| include: false
+
+library(tidyverse)
+library(igraph)
+library(statnet)
+library(GGally)
+```
+
+## Challenge Overview
+
+Describe the many measures of centrality of at least one network of your choice.
+
+## Describe the Network Data
+
+If you have not done it before, always start by evaluating the basic structure of the network (number of edges and vertices, dyad and triad census, etc.). Create a data frame `nodes` with the corresponding local attributes such as degree or local transitivity.
+
+```{r}
+climate <- read.csv("_data/climate0205-allop.csv", sep =  ";") %>% subset(select = -c(X))
+climate.ig <- graph_from_adjacency_matrix(as.matrix(climate), weighted = TRUE, mode = "directed", add.rownames = TRUE)
+climate.net <- as.network(as.matrix(climate), directed = TRUE, weighted = TRUE)
+print(climate.net)
+dyad.census(climate.net)
+triad.census(climate.net, mode = "graph")
+climate.nodes = data.frame(name = climate.net %v% "vertex.names", degree = degree(climate.net), indegree = degree(climate.net, cmode = "indegree"), outdegree = degree(climate.net, cmode = "outdegree"))
+```
+
+
+## Centrality
+
+Compute at least one measure of centrality for each node, adding them as attributes to `nodes` in the form of extra columns: eigencentrality, betweenness, closeness, etc. Compute the distribution of at least one of those measures. What do we learn from comparing these measures of centrality with an equivalent random network (i.e. with the same number of edges and vertices)?
+
+```{r}
+climate.nodes$bonpow <- bonpow(climate.net)
+summary(climate.nodes$bonpow)
+
+set.seed(1)
+random.ig <- sample_gnm(34, 291, directed = TRUE)
+random.nodes <- data.frame(bonpow = power_centrality(random.ig))
+summary(random.nodes$bonpow)
+```
+
+The Bonacich power centrality scores also emphasize the fact that there is long right tail when it comes to degree distribution. The random graph has a much more symmetric distribution. 
