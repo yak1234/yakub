@@ -1,0 +1,601 @@
+---
+title: "Assignment Kpop Collaboration Network"
+author: "Erika Nagai"
+date: "03/28/2023"
+format:
+  html:
+    toc: true
+    code-fold: true
+    code-copy: true
+    code-tools: true
+# editor: visual
+---
+
+# Overview
+
+The phenomenon of K-pop has recently emerged as a prominent cultural force, gaining significant attention and popularity not only in South Korea and other Asian nations but globally as well, particularly among the younger generation. An interesting aspect of K-pop is that many K-pop artists collaborate with other artists, often those who are not based in South Korea. In this analysis, my objective is to delve into the dynamics of such collaborations within the K-pop industry and beyond, across various musical genres, and to investigate how these collaborative patterns have evolved over time. To achieve this goal, I aim to examine the social network of K-pop collaborations, with a view to gaining a better understanding of the underlying trends and structures shaping this phenomenon.
+
+# Collect the data
+
+I collected the data in a following way.
+
+**collab_songs.csv:**
+
+This is a list of collaboration songs collected by
+
+1.  gathering the name of the top 50 Kpop artists in 2010, 2015, and 2020 by asking ChatGPT
+2.  manually collecting their Spotify artist id
+3.  collecting all the singles/albums data of the artists by using Spotify API and
+4.  removing the songs that are NOT collaborative by filtering out those who have only one artist registered
+
+**artist.csv:**
+
+This is a list of artists performed the collaboration songs collected by
+
+1.  extracting the unique artists from the collab_songs.csv
+2.  collecting their information (genre and followers) using Spotify API
+
+**song_detail.csv:**
+
+This is a list of songs with detail information prepared by
+
+1.  extracting the detailed song information (release year, available market etc) by using Spotify API based on the track id from kpop_collab.csv
+
+```{r}
+# install libraries
+library(igraph)
+library(dplyr)
+library(readr)
+library(ggplot2)
+library(tidyr)
+```
+
+```{r}
+# Read in data
+getwd()
+collab_songs <- read_csv("_data/Kpop_collaboration/collab_songs.csv")
+artists <- read_csv("_data/Kpop_collaboration/artists.csv")
+song_detail <- read_csv("_data/Kpop_collaboration/song_detail.csv")
+```
+
+# Describe & Clean the data
+
+### `collab_songs` dataframe
+
+`collab_songs` is a dataframe where each observation is a collaboration songs by Kpop top artists and other artists.
+
+It has 452 rows (collaboration songs) and 26 columns.
+
+```{r}
+library(skimr)
+
+# Skim the data
+skim(collab_songs)
+
+summary(collab_songs)
+```
+
+I removed unnecessary columns. Now `collab_songs` has following columns.
+
+-   song_name
+
+-   song_id: this can be used as a key when joining with `song_detail` dataframe
+
+-   kpop_artist_name: This is a name of the Kpop top artists.
+
+-   artist_id: This is a Spotify Artist ID of the Kpop top artists. This can be used as a key when joining with `artist` dataframe
+
+-   artist\_\[i\]: This is a name of the artists that collaborated with Kpop top artists or the Kpop top artists themselves, which means that it might duplicate with `kpop_artist_name` (i is a number from 1 to 7)
+
+-   artist_id\_\[i\]: This is a Spotify Artist ID of the artists that collaborated with Kpop top artists or the Kpop top artists themselves, which means that it might duplicate with `artist_id` (i is a number from 1 to 7). This can be used as a key when joining with `artists` dataframe.
+
+```{r}
+collab_songs <- collab_songs %>% 
+  select(c("song_name", "song_id", "kpop_artist_name", "artist_id", "artist_1", "artist_id_1", "artist_2", "artist_id_2", "artist_3", "artist_id_3", "artist_4", "artist_id_4", "artist_5", "artist_id_5", "artist_6", "artist_id_6", "artist_7", "artist_id_7"))
+
+collab_songs
+```
+
+```{r}
+collab_songs %>% 
+  arrange(song_name, kpop_artist_name, artist_1, artist_2) %>%
+  select(c("song_name", "kpop_artist_name", "artist_1", "artist_2"))
+```
+
+```{r}
+collab_songs %>% filter(artist_1 == "Blackpink")
+```
+
+### Artists (artist.csv)
+
+`artists` is a dataframe where each row represents an artist (individual/group) that have participated in Kpop collaboration songs by top Kpop artists.
+
+1.  id: This is a Spotify Artist ID of the artist. It can be used as a key when joining with `collab_songs` dataframe
+
+2.  name: the name of the artist
+
+3.  top_kpop: if the artist is one of the top 50 Kpop artists in 2010, 2015, or 2020, the value is 1. Otherwise, the value is 0.
+
+4.  genre: the genre of the artist (can be multiple)
+
+5.  followers: the number of the followers on Spotify
+
+```{r}
+skim(artists)
+
+summary(artists)
+artists
+```
+
+`name` has 513 unique values and `id` has 517 unique values, which may mean that there are `name` values that are duplicated or missing id information.
+
+```{r}
+artists %>% 
+  arrange(name)
+```
+
+```{r}
+# Clean data by removing unnecessary columns
+
+artists <- artists %>% 
+  select(-c('...1'))
+
+artists <- artists %>%
+  select(-c('Unnamed: 0'))
+
+artists <- artists %>% relocate(id, .before = name)
+```
+
+```{r}
+# This is the list of the genre names that appear in artist dataframe
+artists %>%
+  select(genre) %>%
+  separate_rows(genre, sep = ",\\s*") %>%
+  mutate(genre = gsub("\\[|'|\\]", "", genre)) %>%
+  count(genre, sort = TRUE)
+```
+
+I want to add two new columns to the `artist` dataFrame. The first column would indicate the broader genre of each artist, such as K-pop, Latin-pop, or J-pop (Japanese pop), which would help us to better understand the overall geographical market. The second column would simply indicate whether each artist is K-pop or not.
+
+First, I decided to classify the overall genre by detecting the follwoing word in the `genre` column
+
+**K-pop:** "korean", "k-" (for example k-pop, k-rap). Also any artists whose column "to-=p-kpop" is 1 are considered as K-pop genre.
+
+**Latin-pop:** "latin", "latino", "chicano"
+
+**J-pop (Japanese pop):** "japanese", "j-" (for example j-pop, j-rap, j-core), "visual-kei"
+
+**C-pop (Chinese pop):** "chinese"
+
+**UK-pop:** "uk" (uk-pop, uk-hiphop)
+
+**US or Others:** artists whose genre doesn't include the above words but has any word
+
+**Unknown:** artists whose genre is empty
+
+```{r}
+
+artists <- artists %>% 
+  mutate(region_category=case_when(
+    grepl("k-pop|korean|k-rap", genre) | top_kpop == 1 ~ "K-pop",
+    grepl("latin|latino|chicano|bachata", genre) ~ "Latin-pop",
+    grepl("j-pop|j-rap|japanese|j-core|josei|visual-kei", genre) ~ "J-pop",
+    grepl("chinese", genre) ~ "C-pop",
+    grepl("uk-|uk ", genre) ~ "UK-pop",
+    grepl("\\[\\]", genre) ~ "Unknown",
+    TRUE ~ "Other"
+  )) %>%
+  mutate(kpop = case_when(
+    region_category == "K-pop" ~ "yes",
+    TRUE ~ "no"
+  ))
+
+artists
+```
+
+```{r}
+artists <- artists %>% 
+  mutate(
+    show_kpop_top = case_when(
+      top_kpop == 1 ~ name,
+      TRUE ~ ""
+    )
+  )
+```
+
+### song_detail (song_detail.csv)
+
+`song_detail` is a dataframe where each observation is a collaboration song by K-pop top artists and other artists. While `collab_songs` provides the information of the artists that worked on the song, this dataframe provides more detailed information about the songs themselves such as duration, track number, release date etc...
+
+It has 452 rows (collaboration songs), which is the same as the number of the rows of `collab_songs`, and 20 columns.
+
+```{r}
+skim(song_detail)
+summary(song_detail)
+
+```
+
+The columns are as follows
+
+1.  name: name of the songs
+2.  popularity: the popularity index from Spotify
+3.  release_year
+4.  album: this is information about the album the song is from in Json format.
+5.  artists: this is information about the artists in Json format
+6.  available_markets
+7.  explicit
+8.  id: This is a Spotify song id. Can be used as a key when joining with `collab_songs`
+
+```{r}
+# I will remove unnecessary columns
+song_detail <- song_detail %>% 
+  relocate(name,popularity, release_date, release_year, .before="album") %>%
+  select(-c("...1", "disc_number", "duration_ms", "external_ids", "external_urls","href", "is_local", "preview_url", "track_number", "type", "uri", "release_date"))
+
+song_detail$release_year <- as.integer(song_detail$release_year)
+
+song_detail %>% arrange(release_year)
+```
+
+## Extra data cleaning
+
+`collab_songs` include unofficial songs by unofficial accounts. For example, there are a few songs by After School and Blackpink. However, if you look at the Spotify album page, this "Blackpink" is different from "BLACK PINK". There seem to be several cases that the artist ID is not the correct one. So I removed the songs that are not by "official" (=with more monthly followers) accounts.
+
+```{r}
+#For example, there are a few songs by After School and Blackpink. However, if you look at the Spotify album page, this "Blackpink" is different from "BLACK PINK". 
+
+collab_songs %>% filter(artist_1 == "Blackpink")
+```
+
+```{r}
+
+# Remove the songs by artist_1 whose id doesn't exist
+collab_songs <- collab_songs %>%
+  left_join(artists, by = c("artist_id_1" = "id")) %>%
+  filter(!is.na(name)) %>%
+  select(-c("name", "top_kpop", "genre", "followers", "name_lower", "region_category", "kpop"))
+
+# Remove the songs by artist_2 whose id doesn't exist 
+collab_songs <- collab_songs %>% 
+  left_join(artists, by = c("artist_id_2" = "id")) %>%
+  filter(is.na(artist_2)|!is.na(name)) %>%
+  select(-c("name", "top_kpop", "genre", "followers", "name_lower", "region_category", "kpop"))
+
+# Remove the songs by artist_3 whose id doesn't exist 
+collab_songs <- collab_songs %>% 
+  left_join(artists, by = c("artist_id_3" = "id")) %>%
+  filter(is.na(artist_3)|!is.na(name)) %>%
+  select(-c("name", "top_kpop", "genre", "followers", "name_lower", "region_category", "kpop"))
+
+# Remove the songs by artist_4 whose id doesn't exist 
+collab_songs <- collab_songs %>% 
+  left_join(artists, by = c("artist_id_4" = "id")) %>%
+  filter(is.na(artist_4)|!is.na(name)) %>%
+  select(-c("name", "top_kpop", "genre", "followers", "name_lower", "region_category", "kpop"))
+
+# Remove the songs by artist_5 whose id doesn't exist 
+collab_songs <- collab_songs %>% 
+  left_join(artists, by = c("artist_id_5" = "id")) %>%
+  filter(is.na(artist_5)|!is.na(name)) %>%
+  select(-c("name", "top_kpop", "genre", "followers", "name_lower", "region_category", "kpop"))
+
+# Remove the songs by artist_6 whose id doesn't exist 
+collab_songs <- collab_songs %>% 
+  left_join(artists, by = c("artist_id_6" = "id")) %>%
+  filter(is.na(artist_6)|!is.na(name)) %>%
+  select(-c("name", "top_kpop", "genre", "followers", "name_lower", "region_category", "kpop"))
+
+# Remove the songs by artist_7 whose id doesn't exist 
+collab_songs <- collab_songs %>% 
+  left_join(artists, by = c("artist_id_7" = "id")) %>%
+  filter(is.na(artist_7)|!is.na(name)) %>%
+  select(-c("name", "top_kpop", "genre", "followers", "name_lower", "region_category", "kpop"))
+
+collab_songs
+```
+
+Now `collab_songs` has 441 songs (reduced from 452)
+
+# Exploring the data
+
+### How many K-pop collaboration songs are released by year?
+
+```{r}
+
+collab_songs %>% 
+  left_join(song_detail, by = c("song_id"= "id")) %>%
+  ggplot(aes(x=release_year)) + 
+  geom_bar() +
+  scale_x_continuous(breaks=seq(2010, 2022, 5)) + 
+  xlim(2009, 2023) +
+  labs(title = "The number of K-pop collaboration songs", subtitle = "The number of collaboration songs by K-pop top artists is increasing over the time", caption = "Note that this data is based on the information of only top 50 k-pop artists during 2010-2020")
+
+
+```
+
+### Is the popularity of K-pop collaboration songs increasing?
+
+```{r}
+song_detail %>%
+  group_by(release_year) %>%
+  summarize(mean_popularity = mean(popularity)) %>%
+  ggplot(aes(x=release_year, y=mean_popularity)) + geom_line() +
+  labs(title = "Popularity of K-pop collaboration songs", subtitle = "The popularity of K-pop collaboration songs is increasing dramatically.")
+```
+
+# Convert this data to network data
+
+To analyze this data in a perspective of social network, I need to convert this data into an edgelist where from_nodes are K-pop top artists, to_nodes are artists who collaborated with them, and edges are songs.
+
+```{r}
+# pivot_longer
+edgelist <- collab_songs %>%
+  pivot_longer(
+    cols = starts_with("artist_id_"),
+    names_to = "variable",
+    values_to = "to_artist_id"
+  )%>% 
+  filter(!is.na(to_artist_id)) %>% # Remove the rows where the to_artist_id is blank 
+  filter(artist_id != to_artist_id) %>%  # Remove the rows where from_artist and to_artist are the same 
+  select(c("artist_id", "to_artist_id", "song_id", "song_name"))
+
+colnames(edgelist) <- c("From", "To", "song_id", "song_name")
+
+edgelist
+```
+
+## Edgelist (without spliting)
+
+```{r}
+collab.net <- igraph::graph_from_data_frame(edgelist, directed = FALSE, vertices = artists)
+
+
+```
+
+```{r}
+
+# Setting the attributes
+
+# # For visualization
+# ## color
+artists <- artists %>% mutate(
+  color_region_category = case_when(
+    region_category == "K-pop" ~ "#FFFFE1",
+    region_category == "Latin-pop" ~ "#99860C",
+    region_category == "J-pop" ~ "#FDCCCC",
+    region_category == "C-pop" ~ "#920002",
+    region_category == "UK-pop" ~ "#ABD7E6",
+    region_category == "Other" ~ "#010087",
+    TRUE ~ "darkgrey" ),
+  color_kpop = case_when(
+    kpop == "yes" ~ "#FFFFE1",
+    TRUE ~ "#010087"
+  )
+)
+
+
+
+V(collab.net)$color <- artists$color_region_category
+# 
+# 
+# V(collab.net)$name_kpop_top <- artists$show_name_kpop_top
+# V(collab.net)$name_followers <- artists$show_name_followers
+
+
+```
+
+```{r}
+# Check attributes
+
+summary(collab.net) #509 nodes and 591 edges
+igraph::vertex_attr_names(collab.net)
+igraph::edge_attr_names(collab.net)
+```
+
+# Overview of K-pop collaboration network
+
+```{r}
+
+plot(collab.net, 
+     vertex.label = V(collab.net)$show_kpop_top,
+     arrow.mode="-",
+     vertex.size = log(V(collab.net)$followers) * 0.5,
+     vertex.label.cex = .8,
+     vertex.label.color = "black",
+     vertex.label.dist = 0,
+     frame.width = 0,
+     color = V(collab.net)$color_region_category,
+     main = "K pop collaboration network for the last 18 years",
+     ref = "The size of the circles means the popularity"
+     )
+
+legend(
+  "bottomright",
+  legend = c("K-pop", "Latin-pop", "J-pop", "C-pop", "UK-pop", "US or Other", "Unknown"),
+  pt.bg  = c("#FFFFE1", "#99860C", "#FDCCCC", "#920002", "#ABD7E6", "#010087", "darkgrey"),
+  pch    = 21,
+  cex    = 1,
+  bty    = "n",
+  title  = "Genre"
+  )
+
+```
+
+# Overview: How the collaboration patterns have changed over time?
+
+1.  Between 2006 and 2010, the number of collaboration songs among K-pop artists was limited, with few international collaborations with artists outside of South Korea. Additionally, the network was sparse and disconnected.
+
+2.  From 2011 to 2015, the number of collaboration songs slightly increased, with more international collaborations and a more connected network.
+
+3.  Between 2016 and 2020, K-pop experienced significant growth in terms of the number and types of collaborations. Notably, BTS, G(I)DLE, and Blackpink have a large number of international collaboration songs.
+
+4.  In 2021, the number of collaboration songs is not as large as that of 2016-2020 due to the shorter time span, but the proportion of international collaborations appears to be higher.
+
+```{r}
+edgelist <- edgelist %>% 
+  left_join(song_detail, by = c("song_id"="id")) %>%
+  mutate(
+    period = case_when(
+      release_year <= 2010 ~ "2005-2010",
+      release_year > 2010 & release_year <= 2015 ~ "2011-2015",
+      release_year > 2015 & release_year <= 2020 ~ "2016-2020",
+      TRUE ~ "2021-"
+    )
+  ) %>% 
+  select(c("From", "To", "song_id", "release_year", "period", "name", "popularity"))
+  
+#E(collab.net)$period <- edgelist$period
+
+```
+
+```{r}
+
+# Split the edgelist dataframe into 4 groups based on "period"
+
+edgelist_list <- split(edgelist, edgelist$period)
+
+# convert each element of the list into a separate dataframe
+
+graphs <- list()
+
+
+for (i in seq_along(edgelist_list)) {
+  assign(paste0("edgelist_", names(edgelist_list)[i]), edgelist_list[[i]])
+  
+  unique_vertices <- unique(c(edgelist_list[[i]]$From, edgelist_list[[i]]$To))
+  artists_period <- artists[artists$id %in% unique_vertices, ]
+  
+  # Create the graph from the filtered edgelist and vertices
+  graph <- graph_from_data_frame(edgelist_list[[i]], directed = FALSE, vertices = artists_period)
+
+  # Append the graph to the list of graphs
+  graphs[[i]] <- graph
+} 
+
+
+```
+
+```{r}
+# Assigining visualization attributes
+
+periods <- c("2006-2010", "2011-2015", "2016-2020", "2021-")
+
+for (i in 1:length(graphs)) {
+  V(graphs[[i]])$color <- V(graphs[[i]])$color_region_category
+  plot(graphs[[i]], 
+     vertex.label = V(graphs[[i]])$show_kpop_top,
+     arrow.mode="-",
+     vertex.size = log(V(graphs[[i]])$followers) * 0.7,
+     vertex.label.cex = .8,
+     vertex.label.color = "black",
+     vertex.label.dist = 0,
+     frame.width = 0,
+     color = V(graphs[[i]])$color_region_category,
+     main = paste0("Collaboration by K-pop top artists", periods[[i]])
+     )
+  
+  legend(
+  "bottomright",
+  legend = c("K-pop", "Latin-pop", "J-pop", "C-pop", "UK-pop", "US or Other", "Unknown"),
+  pt.bg  = c("#FFFFE1", "#99860C", "#FDCCCC", "#920002", "#ABD7E6", "#010087", "darkgrey"),
+  pch    = 21,
+  cex    = 1,
+  bty    = "n",
+  title  = "Genre"
+  )
+}
+
+
+
+
+
+```
+
+# Closer look: How does the network change every year?
+
+```{r}
+
+# Make a graph for each year
+
+graph_from_data_frame_with_all_vertices <- function(df, vertices) {
+  # Create a data frame with all possible edges between vertices
+  unique_vertices <- unique(c(df$From, df$To))
+  artists_period <- artists[artists$id %in% unique_vertices, ]
+  # Create the graph with all vertices and existing edges
+  graph <- graph_from_data_frame(df, directed = FALSE, vertices = artists_period)
+  return(graph)
+}
+
+graphs_year <- lapply(2006:2023, function(x) graph_from_data_frame_with_all_vertices(df = edgelist[edgelist$release_year == x, ], vertices = artists))
+
+```
+
+```{r}
+# Make a dataframe of graph statistics
+
+# Initialize the data frame
+graph_stats <- data.frame(release_year = 2006:2023, 
+                           num_nodes = numeric(length(2006:2023)), 
+                           num_edges = numeric(length(2006:2023)), 
+                           centralization = numeric(length(2006:2023)), 
+                           density = numeric(length(2006:2023)), 
+                           transitivity = numeric(length(2006:2023))
+                           
+                           )
+
+# Loop through each year and calculate the desired graph statistics
+for (i in 1:length(graphs_year)) {
+  graph <- graphs_year[[i]]
+  
+  # Fill in the corresponding row of the data frame with the calculated statistics
+  graph_stats[i, "num_nodes"] <- vcount(graph)
+  graph_stats[i, "num_edges"] <- ecount(graph)
+  graph_stats[i, "centralization"] <- centr_degree(graph)$centralization
+  graph_stats[i, "density"] <- graph.density(graph)
+  graph_stats[i, "transitivity"] <- transitivity(graph)
+}
+
+
+# Print the resulting data frame
+print(graph_stats)
+
+```
+
+## Number of nodes and edges
+
+```{r}
+
+# Create a plot with a bar chart and a line chart
+ggplot(graph_stats, aes(x = release_year)) +
+  geom_bar(aes(y = num_nodes), stat = "identity", fill="lightgrey") +
+  geom_line(aes(y = num_edges, group = 1, fill = "black")) +
+  labs(y = "Number", x = "year", title = "The number of nodes (grey) and edges (black line)") +
+  theme_classic()
+
+```
+
+```{r}
+# Create a plot with a bar chart and a line chart
+ggplot(graph_stats, aes(x = release_year)) +
+  #geom_bar(aes(y = density, stat = "identity", fill="lightgrey")) +
+  geom_line(aes(y = centralization, group = 1, fill = "black")) +
+  labs(y = "Centralization", x = "year", title = "Centralization") +
+  theme_classic()
+```
+
+```{r}
+# Create a plot with a bar chart and a line chart
+ggplot(graph_stats, aes(x = release_year)) +
+  #geom_bar(aes(y = density, stat = "identity", fill="lightgrey")) +
+  geom_line(aes(y = density, group = 1, fill = "black")) +
+  labs(y = "Density", x = "year", title = "Density") +
+  theme_classic()
+```
+
+# Discussion
+
+How do I interpret the density and centrality?
+
+Transitivity doesn't work
+
+Artist based analysis (# of degree)
