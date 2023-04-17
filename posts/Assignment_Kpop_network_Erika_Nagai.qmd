@@ -53,9 +53,9 @@ library(tidyr)
 ```{r}
 # Read in data
 getwd()
-collab_songs <- read_csv("_data/Kpop_collaboration/collab_songs.csv")
-artists <- read_csv("_data/Kpop_collaboration/artists.csv")
-song_detail <- read_csv("_data/Kpop_collaboration/song_detail.csv")
+collab_songs <- read_csv("_data/Kpop_collaboration_Erika_Nagai/collab_songs.csv")
+artists <- read_csv("_data/Kpop_collaboration_Erika_Nagai/artists.csv")
+song_detail <- read_csv("_data/Kpop_collaboration_Erika_Nagai/song_detail.csv")
 ```
 
 # Describe & Clean the data
@@ -579,7 +579,7 @@ ggplot(graph_stats, aes(x = release_year)) +
 ggplot(graph_stats, aes(x = release_year)) +
   #geom_bar(aes(y = density, stat = "identity", fill="lightgrey")) +
   geom_line(aes(y = centralization, group = 1, fill = "black")) +
-  labs(y = "Centralization", x = "year", title = "Centralization") +
+  labs(y = "Centralization", x = "year", title = "Change in Centralization of K-pop collaboration network") +
   theme_classic()
 ```
 
@@ -588,9 +588,35 @@ ggplot(graph_stats, aes(x = release_year)) +
 ggplot(graph_stats, aes(x = release_year)) +
   #geom_bar(aes(y = density, stat = "identity", fill="lightgrey")) +
   geom_line(aes(y = density, group = 1, fill = "black")) +
-  labs(y = "Density", x = "year", title = "Density") +
+  labs(y = "Density", x = "year", title = "Change in density of Kpop collaboration network") +
   theme_classic()
 ```
+
+# Artist-based analysis: Who is the center of K-pop network?
+
+```{r}
+igraph::vertex_attr_names(collab.net)
+```
+```{r}
+# Make a node stat dataframe
+
+nodes_stat <- data.frame(genre = V(collab.net)$genre,
+                         followers = V(collab.net)$followers,
+                         region_category = V(collab.net)$region_category,
+                         kpop = V(collab.net)$kpop,
+                         degree = degree(collab.net)
+                           )
+
+```
+
+Here are the artists that have had most degree (≒ collaboration songs).
+```{r}
+nodes_stat %>%
+  filter(kpop == "yes") %>%
+  arrange(desc(degree)) %>%
+  select(degree)
+```
+
 
 # Discussion
 
