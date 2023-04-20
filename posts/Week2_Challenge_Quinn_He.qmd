@@ -1,0 +1,196 @@
+---
+title: "Week 2 Challenge"
+author: "Quinn He"
+description: "Describing the Basic Structure of a Network"
+date: "03/02/2023"
+format:
+  html:
+    toc: true
+    code-fold: true
+    code-copy: true
+    code-tools: true
+# editor: visual
+categories: 
+  - challenge_2
+  - instructions
+  - got_marriages
+---
+
+```{r}
+#| label: setup
+#| include: false
+
+
+library(tidyverse)
+library(statnet)
+library(igraph)
+```
+
+
+```{r}
+marriages <- read_csv("../posts/_data/got/got_marriages.csv")
+```
+
+I am not sure exactly how to read in a csv into a statnet object. I saw Ben used this kind of format so I used this one for now, but further in the challenge I hit some errors I have not yet figured out how to resolve that may have stemmed from this read in.
+
+```{r}
+
+got.ig <- graph_from_data_frame(marriages, directed = F)
+got.net <- as.network.data.frame(marriages, directed = F, loops = T, multiple = T)
+
+
+```
+
+
+## Challenge Overview
+
+
+Identify and describe content of nodes and links, and identify format of data set (i.e., matrix or edgelist, directed or not, weighted or not), and whether attribute data are present. Be sure to provide information about network size (e.g., information obtained from network description using week 1 network basic tutorial commands.)
+
+Explore the dataset using commands from week 2 tutorial. Comment on the highlighted aspects of network structure such as: 
+
+- Geodesic and Path Distances; Path Length
+- Dyads and Dyad Census
+- Triads and Triad Census
+- Network Transitivity and Clustering
+- Component Structure and Membership
+
+Be sure to both provide the relevant statistics calculated in `R`, as well as your own interpretation of these statistics.
+
+## Describe the Network Data
+
+
+
+```{r}
+ls(got.net)
+
+ls(got.ig)#Ill revisit that later. This is indicating that the data files are not working properly, but I can run the code
+#just fine down below. 
+```
+
+Based on the output by statnet, this network has 20 vertices/actors in the network and there are 255 total edges/connections between those actors. I have included loops so this data set can contain marriages within the same family. It is an undirected network, meaning there is a mutual connection, shared connection; information flows both ways.
+```{r}
+print(got.net)
+```
+
+
+Let's see if igraph gives the same results.
+
+```{r}
+vcount(got.ig)
+```
+
+```{r}
+ecount(got.ig)
+```
+The vertices and edge counts are the same as the statnet output. I can also see with igraph that the network is unweighted meaning there are not 
+
+```{r}
+is_weighted(got.ig)
+
+is_bipartite(got.ig)
+
+is_directed(got.ig)
+```
+
+```{r}
+
+vertex_attr_names(got.ig)
+
+edge_attr_names(got.ig)
+
+```
+
+
+
+1. *List and inspect* List the objects to make sure the datafiles are working properly.
+2. *Network Size* What is the size of the network? You may use `vcount` and `ecount`.
+3. *Network features* Are these networks weighted, directed, and bipartite?
+4. *Network Attributes* Now, using commands from either `statnet` or `igraph`, list the vertex and edge attributes.
+
+## Dyad and Triad Census
+
+Here I will look at the number of dyad (total number of 2 connections) and triad (total number of triangle connections). Now igraph and statnet give two different outputs for dyad census. 
+
+According to igraph, there are 60 mutual connections, 0 non-mutual connections, and 130 absent connections. 
+```{r}
+dyad_census(got.ig)
+```
+
+
+Statnet observes 310 mutual connections with, somehow, -250 asymmetric connections, and the same number of null.  connections. Why would there be a set of negative connections? 
+```{r}
+sna::dyad.census(got.net)
+```
+
+
+```{r}
+triad.census(got.ig)
+```
+
+```{r}
+sna::triad.census(got.net)
+```
+
+The statnet output is much easier to read and gives a clearer view of what types of triads are throughout the network. It's handy because it lists all 16 of the unique combinations in directed ties. I much prefer this over igraphs interpretation of triad census. 
+
+003 means there are 3 null dyads and no mutual or asymmetric, so there are 408 of those types. 102 means there are 444 triads with 1 mutual connection. 201 is there are 2 mutual connections in 228 triads. There are 60 complete triads. For example, there are 60 instances of 3 families marrying around. 
+
+## Global and Local Transitivity or Clustering
+
+Compute global transitivity using `transitivity` on `igraph` or `gtrans` on `statnet` and local transitivity of specific nodes of your choice, in addition to the average clustering coefficient. What is the distribution of node degree and how does it compare with the distribution of local transitivity?
+
+Remember! All three nodes have to be connected to be considered part of the transitive calculation in statnet.
+
+The number I get will be the measure of the portion of connected triads in the network that are complete. A 1 would mean all connected triads are transitive. 
+
+The average local clustering is about 10% higher than the global clustering coefficient. This means that there is a 54% chance that friends of the ego are likely to know each other. It is the density of ties between neighbors. Each ego has a local clustering coefficient, the 54% is just the average. 
+
+44% of the triads in the network are complete triads. 
+
+```{r}
+transitivity(got.ig, type = "average")
+
+transitivity(got.ig, type = "global")
+```
+
+```{r}
+gtrans(got.net, diag = T)
+```
+
+
+
+
+
+## Path Length and Component Structure 
+
+Can you compute the average path length and the _diameter_ of the network? Can you find the component structure of the network and identify the cluster membership of each node?
+
+The average path length between two nodes is 1.9, which indicates to me that many of the nodes are relatively close together. The diameter measure shows the length of the longest geodesic distance between nodes. 4 does not seem to be too high but I am not sure what to compare it to. 
+
+```{r}
+average.path.length(got.ig, directed = F)
+
+diameter(got.ig, directed = F)
+
+```
+
+
+
+From this we can see there is a single component. 
+```{r}
+igraph::components(got.ig)$no
+```
+
+The one component has only 20 members in it with no isolates so all the nodes are connected. If this is true the next command should confirm there are no isolates and return a 0
+```{r}
+igraph::components(got.ig)$csize
+```
+
+Nice!
+```{r}
+isolates(got.net)
+```
+
+
+

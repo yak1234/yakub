@@ -1,0 +1,167 @@
+---
+title: "Week 3 Challenge"
+author: "Quinn He "
+description: "Degree and Density of a Network"
+date: "03/23/2023"
+format:
+  html:
+    toc: true
+    code-fold: true
+    code-copy: true
+    code-tools: true
+# editor: visual
+categories: 
+  - challenge_3
+
+
+---
+
+```{r}
+#| label: setup
+#| include: false
+
+library(tidyverse)
+library(igraph)
+library(statnet)
+library(readxl)
+#| 
+```
+
+```{r}
+wire <- read_excel("~/Documents/the-wire-network.xlsx")
+
+madoff <- read_csv("~/Documents/MADOFF.csv")
+```
+
+I read in these two data sets in case I want to play around with two different types. The madoff.ig is read in as a matrix. 
+```{r}
+madmat <- as.matrix(madoff)
+
+madoff.ig <- graph.data.frame(madmat)
+```
+Convert the data set into an igraph object
+```{r}
+wire.ig <- graph_from_data_frame(wire, directed = FALSE)
+#wire.net <- as.network.data.frame(wire)
+```
+
+```{r}
+vcount(wire.ig)
+```
+
+```{r}
+ecount(wire.ig)
+```
+
+```{r}
+dyad.census(wire.ig)
+```
+
+```{r}
+triad_census(wire.ig)
+```
+
+Creating the dataframe
+```{r}
+wire.nodes <- data.frame(names = V(wire.ig)$name, 
+                         outdegree = degree(wire.ig, mode = "out"), 
+                         indegree = degree(wire.ig, mode = "in"),
+                         totdegree = degree(wire.ig),
+                         eigen = eigen_centrality(wire.ig))
+```
+
+```{r}
+madoff.nodes <- data.frame(names = V(madoff.ig)$name,
+    totdegree=igraph::degree(madoff.ig, loops=FALSE),
+    indegree=igraph::degree(madoff.ig, mode="in", loops=FALSE),
+    outdegree=igraph::degree(madoff.ig, mode="out", loops=FALSE))
+```
+
+```{r}
+triad.census(madmat)
+```
+
+```{r}
+vcount(madoff.ig)
+
+ecount(madoff.ig)
+```
+
+
+## Degree
+
+If you have not done it before, evaluate the structure of the network (number of edges and vertices, dyad and triad census, etc.).
+
+Compute the many measures of _degree_ of the network of your choice, most preferably directed. Create a data frame called `nodes` where each row corresponds to a node and each column to an attribute of the node, namely the id, name or label, and different measures of degree: total, out-degree, and in-degree. What is the average degree of the network?
+
+Compute the distributions of those measures (or histograms if your network is small). What does this tell us about the structure of the network?
+
+```{r}
+hist(wire.nodes$outdegree)
+```
+```{r}
+hist(wire.nodes$totdegree)
+```
+
+```{r}
+hist(wire.nodes$indegree)
+```
+
+```{r}
+hist(madoff.nodes$totdegree)
+```
+
+```{r}
+hist(madoff.nodes$indegree)
+```
+
+
+```{r}
+hist(madoff.nodes$outdegree)
+```
+
+## Density
+
+```{r}
+edge_density(wire.ig, loops = T)
+```
+The wire network is not too dense, but it is denser than the Madoff network below by a significant amount. The Madoff network is not dense meaning the nodes are not well connected at all. This may be good for Bernie Madoff because this would indicate he had a diverse array of clients who did not have much contact with one another. 
+
+```{r}
+edge_density(madoff.ig, loops = T)
+```
+
+
+
+Compute the density of the network. Is this a global or local measure? Does it have a relationship with average degree? 
+
+## Random Network
+
+Create a random (Erdos-Renyi) network with the same number of nodes and edges than the network of your choice. On `igraph`, the necessary commands are `random.graph.game(n, p.or.m, type = c("gnp", "gnm"), directed = FALSE, loops = FALSE)` (deprecated), `sample_gnp(n, p, directed = FALSE, loops = FALSE)` or `sample_gnm(n, m, directed = FALSE, loops = FALSE)`. The `p.or.m` argument is to specify the probability of an edge $p$ or the number of edges $m$.
+  
+Compare the densities, dyad and triad censuses, and degree distributions, with the measures of the network of your choice. Does the comparison us something about the network of your choice? 
+
+
+```{r}
+set.seed(123)
+random.ig <- sample_gnm(62,61, loops =F, directed = F)
+
+degree_distribution(random.ig)
+```
+
+
+```{r}
+dyad_census(random.ig)
+```
+
+
+
+```{r}
+vcount(random.ig)
+```
+
+This random network is slightly more dense than the actual Madoff network, but only by 0.02. The new network also has the same number of vertices as the original network, but I am confused as to why there is 1830 null types in the dyad census. 
+```{r}
+graph.density(random.ig)
+```
+
