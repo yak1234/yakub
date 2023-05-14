@@ -1,4 +1,4 @@
----
+ v---
 title: "Week 2 Challenge Instructions"
 author: "Yakub Rabiutheen"
 description: "Describing the Basic Structure of a Network"
@@ -20,6 +20,7 @@ categories:
 ```{r}
 library(readr)
 library(igraph)
+setwd("~/Social_Networks_Spring_2023/posts/_data")
 ```
 
 ## Challenge Overview
@@ -28,13 +29,13 @@ For my Challenges , I will be doing the Game of Thrones Likes vs Dislike Dataset
 
 
 ```{r}
-got_like_dislike <- read_csv("_data/got/got_like_dislike.csv")
+got_like_dislike <- read_csv("got/got_like_dislike.csv")
 ```
 1. List and inspect List the objects to make sure the datafiles are working properly.
 
 Below are the list of Objects in the Game of Thrones Like_Dislike Dataset
 ```{r}
-
+got_like_dislike
 ```
 
 

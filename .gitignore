@@ -52,3 +52,9 @@ posts/_metadata.yml
 
 #templates
 _templates/
+_chunk$set(echo = TRUE, warning = FALSE, message=FALSE)
+posts/codespaces-blank.code-workspace
+posts/started_up.code-workspace
+posts/Week2_Challenge_ErikaNagai_files/figure-html/unnamed-chunk-17-1.png
+posts/Week2_Challenge_ErikaNagai_files/figure-html/unnamed-chunk-26-1.png
+posts/Week2_Challenge_ErikaNagai_files/figure-html/unnamed-chunk-27-1.png

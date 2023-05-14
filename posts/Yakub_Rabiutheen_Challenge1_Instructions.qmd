@@ -42,7 +42,7 @@ Find the `_data` folder, located inside the `posts` folder. Then you can read in
 
 ```{r}
 library(readr)
-setwd("~/GitHub/Social_Networks_Spring_2023/posts/_data")
+setwd("~/Social_Networks_Spring_2023/posts/_data")
 got_marriages <- read_csv("got/got_marriages.csv")
 ```
 
@@ -69,6 +69,8 @@ got_marriages.ig
 ##Nodes
 V(got_marriages.ig)
 ```
+
+
 ```{r}
 E(got_marriages.ig)
 ```

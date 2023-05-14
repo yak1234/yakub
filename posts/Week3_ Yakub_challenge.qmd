@@ -1,0 +1,186 @@
+---
+title: "Week 3 Challenge Instructions"
+author: "Yakub Rabiutheen"
+description: "Degree and Density of a Network"
+date: "03/06/2023"
+format:
+  html:
+    toc: true
+    code-fold: true
+    code-copy: true
+    code-tools: true
+# editor: visual
+categories: 
+  - challenge_3
+  - instructions
+  # - railroads
+  # - faostat
+  # - wildbirds
+---
+
+```{r}
+library(tidyverse)
+library(igraph)
+library(statnet)
+library(ggplot2)
+```
+
+## Challenge Overview
+
+Describe the many measures of degree, as well as density, of a network and compare 
+
+## Degree
+
+Reading in Climate Data.
+
+The Climate Dataframe has a Semicolor for it's Seperator.
+```{r}
+climate_df <- read.csv("posts/_data/climate0205-allop.csv",, sep =  ";") 
+```
+
+
+```{r}
+climate_df <- climate_df %>% subset(select = -c(X))
+```
+
+
+
+Now Turning the Climate Dataframe into an igraph Object and then a Network.
+```{r}
+climate.ig <- graph_from_adjacency_matrix(as.matrix(climate_df), weighted = TRUE, mode = "directed", add.rownames = TRUE)
+climate.net <- as.network(as.matrix(climate_df), directed = TRUE, weighted = TRUE)
+```
+
+Printing the Network Attributes
+```{r}
+print(climate.net)
+```
+
+ Network attributes:
+  vertices = 34 
+  directed = TRUE 
+  hyper = FALSE 
+  loops = FALSE 
+  multiple = FALSE 
+  bipartite = FALSE 
+  total edges= 291 
+    missing edges= 0 
+    non-missing edges= 291 
+
+
+The Climate  network has 34 vertices and is undirected, with bidirectional connections between entities. There are no loops or multiple edges present, indicating a simpler structure. The bipartite nature of the network divides the vertices into two distinct sets. In total, there are 34 edges representing the direct relationships between entities, with no missing connections in the network representation.
+
+
+
+
+# Dyad Census
+
+```{r}
+dyad.census(climate.net)
+```
+
+-65 mutually connected dyads, indicating bidirectional connections between pairs of entities. 
+- 151 Asymmetrical 
+-365 Null dyads.
+
+
+# Triad Census
+
+```{r}
+triad.census(climate.net, mode = "graph")
+```
+        0    1   2   3
+[1,] 3023 2016 787 158
+
+Triad Census
+-3023 triads with no ties, suggesting the presence of isolated entities or disconnected clusters within the network
+-2016 with one Tie
+-787 with two ties
+- 158 with three Ties
+
+
+##Create Climate Node
+
+```{r}
+name <- climate.net %v% "vertex.names"
+degree <- degree(climate.net)
+indegree <- degree(climate.net, cmode = "indegree")
+outdegree <- degree(climate.net, cmode = "outdegree")
+
+climate.nodes <- data.frame(
+  name = name,
+  degree = degree,
+  indegree = indegree,
+  outdegree = outdegree
+)
+```
+
+
+
+
+```{r}
+mean(climate.nodes$degree)
+```
+
+Average is 17
+
+```{r}
+summary(climate.nodes)
+```
+
+-34 vertices in total, 
+
+-the degree distribution ranges from a minimum of 2 to a maximum of 40. =
+
+- The median degree of 16.5 further reinforces this observation, indicating that half of the vertices have a degree of 16 or lower
+
+
+## Density
+
+Compute the density of the network. Is this a global or local measure? Does it have a relationship with average degree? 
+
+```{r}
+network.density(climate.net)
+```
+
+The Density is 0.259, which indicates approximately 25.9% of the possible edges are present in the network. 
+
+
+Density is  a global measure that quantifies the proportion of actual edges present in the network compared to the total number of possible edges. 
+
+With an average degree of 17.17 and a density of 0.259, we observe a moderate level of connectivity in the "climate.nodes" network. The average degree signifies a relatively high number of edges per vertex, indicating a denser network. 
+
+
+## Random Network
+
+Create a random (Erdos-Renyi) network with the same number of nodes and edges than the network of your choice. On `igraph`, the necessary commands are `random.graph.game(n, p.or.m, type = c("gnp", "gnm"), directed = FALSE, loops = FALSE)` (deprecated), `sample_gnp(n, p, directed = FALSE, loops = FALSE)` or `sample_gnm(n, m, directed = FALSE, loops = FALSE)`. The `p.or.m` argument is to specify the probability of an edge $p$ or the number of edges $m$.
+  
+Compare the densities, dyad and triad censuses, and degree distributions, with the measures of the network of your choice. Does the comparison us something about the network of your choice? 
+
+
+```{r}
+set.seed(1)
+random.ig <- sample_gnm(34, 291)
+dyads <- dyad_census(random.ig)
+triads <- triad_census(random.ig)
+density <- edge_density(random.ig)
+degrees <- igraph::degree(random.ig)
+```
+
+
+
+```{r}
+summary(dyads)
+summary(triads)
+summary(density)
+```
+
+> summary(triads)
+   Min. 1st Qu.  Median    Mean 3rd Qu.    Max. 
+    0.0     0.0     0.0   374.0   171.5  2334.0 
+> summary(density)
+   Min. 1st Qu.  Median    Mean 3rd Qu.    Max. 
+ 0.5187  0.5187  0.5187  0.5187  0.5187  0.5187 
+
+
+Both networks have the same density of 0.5187, indicating a similar level of overall connectivity in terms of edge presence relative to the total number of possible edges. However, the Climate Network had more complete triads compared to the randomly generated graph
