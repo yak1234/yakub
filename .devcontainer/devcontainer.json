@@ -1,16 +1,40 @@
 {
-	"image": "mcr.microsoft.com/devcontainers/universal:2",
-	"features": {
-		"ghcr.io/devcontainers/features/aws-cli:1": {},
-		"ghcr.io/rocker-org/devcontainer-features/apt-packages:1": {},
-		"ghcr.io/rocker-org/devcontainer-features/r-apt:0": {},
-		"ghcr.io/devcontainers-contrib/features/aws-cdk:2": {}
+	"name": "R Data Science Environment",
+	"build": {
+		"dockerfile": "Dockerfile",
+		// Update VARIANT to pick a specific R version: 4, 4.1, 4.0
+		"args": { "VARIANT": "4" }
 	},
-	"customizations": {
-		"vscode": {
-			"extensions": [
-				"quarto.quarto"
-			]
+
+	// Set *default* container specific settings.json values on container create.
+	"settings": {
+		"r.rterm.linux": "/usr/local/bin/radian",
+		"r.bracketedPaste": true,
+		"r.plot.useHttpgd": true,
+		"[r]": {
+			"editor.wordSeparators": "`~!@#%$^&*()-=+[{]}\\|;:'\",<>/?"
 		}
-	}
+	},
+
+	// Add the IDs of extensions you want installed when the container is created.
+	"extensions": [
+		// Add Jupyter, R and Python vscode extensions
+		"REditorSupport.r",
+		"rdebugger.r-debugger",
+		"ms-toolsai.jupyter",
+		"ms-toolsai.jupyter-renderers",
+		"ms-python.python",
+		"ms-python.vscode-pylance",
+		"vsls-contrib.codetour",
+		"GitHub.copilot"
+	],
+
+	// Use 'forwardPorts' to make a list of ports inside the container available locally.
+	// "forwardPorts": [],
+
+	// Use 'postCreateCommand' to run commands after the container is created.
+	"postCreateCommand": "pip3 install -r requirements.txt",
+
+	// Comment out to connect as root instead. More info: https://aka.ms/vscode-remote/containers/non-root.
+	"remoteUser": "vscode"
 }
